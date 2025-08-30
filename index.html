@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>shreedatta capital admin login</title>
+  <meta name="description" content="Admin login for Shreedatta Capital" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🔒</text></svg>">
+  <link rel="stylesheet" href="asset/css/style.css">
+</head>
+<body>
+  <div class="container" role="main">
+    <div class="header">
+      <div class="badge" aria-hidden="true">
+        <span>🔐</span>
+        <span>Admin Portal</span>
+      </div>
+      <h1 class="title">shreedatta capital admin login</h1>
+      <p class="subtitle">Please sign in with your administrator credentials.</p>
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <div class="input">
+          <span aria-hidden="true">👤</span>
+          <input id="username" name="username" type="text" placeholder="Enter username" autocomplete="username" required />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input">
+          <span aria-hidden="true">🔑</span>
+          <input id="password" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required />
+          <button class="icon-btn" type="button" id="togglePw" aria-label="Show password" title="Show/Hide password">👁️</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <label class="remember">
+          <input type="checkbox" id="remember" /> Remember me
+        </label>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </div>
+      <div id="error" class="error" role="alert" aria-live="polite"></div>
+    </form>
+
+    <div class="footer">
+      © <span id="year"></span> Shreedatta Capital. All rights reserved.
+    </div>
+  </div>
+  <script src="asset/js/app.js"></script>
+</body>
+</html>

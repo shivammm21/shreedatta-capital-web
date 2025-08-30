@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gold draw registration page</title>
+  <link rel="stylesheet" href="/asset/css/style.css" />
+  <style>
+    /* Page-level overrides to allow scrolling (global CSS centers body with grid+100% height) */
+    html, body.form-page { height: auto; min-height: 100%; overflow-y: auto; }
+    body.form-page { display: block; place-items: initial; padding: 0; -webkit-overflow-scrolling: touch; }
+    .container { max-width: 920px; margin: 32px auto; padding: 20px; overflow: visible; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .title { font-size: 22px; font-weight: 700; margin-bottom: 16px; }
+    form { display: grid; gap: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    label { display:block; font-size: 14px; color: #374151; margin-bottom: 6px; }
+    input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; }
+    input[type="file"] { width: 100%; }
+    .row { display:flex; align-items:center; gap: 12px; }
+    .hint { font-size: 12px; color: #6b7280; }
+    .media { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .media .box { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px; }
+    .media .preview { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
+    .hidden { display: none !important; }
+    .actions { display:flex; gap:10px; justify-content:flex-end; }
+    button.btn { appearance:none; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; background:#111827; color:#fff; cursor:pointer; }
+    button.btn.secondary { background:#fff; color:#111827; }
+    .agreement { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
+    .agreement p { margin:0; font-size: 13px; line-height: 1.4; }
+
+    /* Token chips row */
+    .tokens { display: grid; gap: 10px; }
+    .token-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .token-actions { display: flex; gap: 8px; }
+    .icon-btn { appearance:none; border:1px solid #e5e7eb; background:#fff; border-radius:10px; padding:10px 12px; cursor:pointer; min-width:44px; }
+    .icon-btn.add { background:#111827; color:#fff; }
+    .icon-btn.remove { background:#fff; color:#111827; }
+
+    /* Preview overlay clear button */
+    .preview-wrap { position: relative; }
+    .clear-btn { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 999px; border: 1px solid #e5e7eb; background:#fff; color:#111827; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+    .clear-btn:active { transform: scale(0.98); }
+
+    /* Mobile tweaks */
+    @media (max-width: 640px) {
+      .container { padding: 12px; margin: 16px auto; }
+      .media { grid-template-columns: 1fr; }
+      .actions { flex-direction: column; }
+      .actions .btn { width: 100%; }
+      .token-row { grid-template-columns: 1fr 56px; }
+      #cam { width: 100%; height: auto; aspect-ratio: 4 / 3; }
+      .media .preview { height: 160px; }
+    }
+  </style>
+</head>
+<body class="form-page">
+  <div class="container">
+    <div class="card">
+      <div class="title">Gold draw registration page</div>
+      <form id="goldForm">
+        <div class="grid">
+          <div>
+            <label for="name">Name of the user</label>
+            <input id="name" name="name" type="text" required />
+          </div>
+          <div>
+            <label for="token-0">Token number(s)</label>
+            <div class="tokens" id="tokens">
+              <div class="token-row">
+                <input id="token-0" class="token-input" type="text" placeholder="Enter token number" required />
+                <div class="token-actions">
+                  <button class="icon-btn add" id="addToken" type="button" aria-label="Add token">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="hint">Use + to add more token numbers.</div>
+          </div>
+          <div>
+            <label for="draw">Draw name</label>
+            <input id="draw" name="draw" type="text" required />
+          </div>
+          
+        </div>
+
+        <div class="media">
+          <div class="box">
+            <label>Live camera photo</label>
+            <div class="row">
+              <video id="cam" autoplay muted playsinline style="width:100%; border-radius:8px; background:#000; height:220px; object-fit:cover;"></video>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <button class="btn secondary" type="button" id="startCam">Start Camera</button>
+              <button class="btn" type="button" id="capture">Capture</button>
+            </div>
+            <div class="preview-wrap">
+              <img id="photoPreview" class="preview hidden" alt="Captured preview" />
+              <button id="clearPhoto" type="button" class="clear-btn hidden" aria-label="Clear captured photo">&times;</button>
+            </div>
+            <input type="hidden" id="photoData" name="photoData" />
+          </div>
+          <div class="box">
+            <label>Attach Aadhaar (front)</label>
+            <input id="aadFront" type="file" accept="image/*" />
+            <img id="aadFrontPreview" class="preview hidden" alt="Aadhaar front preview" />
+            <div class="hint">Upload a clear photo of the front side.</div>
+          </div>
+          <div class="box">
+            <label>Attach Aadhaar (back)</label>
+            <input id="aadBack" type="file" accept="image/*" />
+            <img id="aadBackPreview" class="preview hidden" alt="Aadhaar back preview" />
+            <div class="hint">Upload a clear photo of the back side.</div>
+          </div>
+        </div>
+
+        <!-- Language moved above agreement -->
+        <div class="grid">
+          <div>
+            <label for="lang">Agreement Language</label>
+            <select id="lang" name="lang" required>
+              <option value="en" selected>English</option>
+              <option value="hi">Hindi</option>
+              <option value="mr">Marathi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="media">
+          <div class="box agreement">
+            <label for="agree">Agreement</label>
+            <p id="agreementText"></p>
+            <div class="row" style="margin-top:8px;">
+              <input id="agree" type="checkbox" required />
+              <label for="agree">I agree</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="reset" class="btn secondary">Reset</button>
+          <button type="submit" class="btn">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const texts = {
+      en: 'I hereby confirm that the details provided are true and I consent to participate in the Gold draw. I understand and agree to the terms and conditions.',
+      hi: 'मैं पुष्टि करता/करती हूँ कि दी गई जानकारी सत्य है और मैं गोल्ड ड्रॉ में भाग लेने के लिए सहमत हूँ। मैं नियम और शर्तों से सहमत हूँ।',
+      mr: 'मी दिलेली माहिती खरी असल्याची पुष्टी करतो/करते आणि मी गोल्ड ड्रॉमध्ये सहभागी होण्यास सहमत आहे. मी नियम व अटींना सहमत आहे.'
+    };
+
+    const langSel = document.getElementById('lang');
+    const agreementText = document.getElementById('agreementText');
+    function setAgreement() { agreementText.textContent = texts[langSel.value] || texts.en; }
+    setAgreement();
+    langSel.addEventListener('change', setAgreement);
+
+    // Camera handling
+    const startCamBtn = document.getElementById('startCam');
+    const captureBtn = document.getElementById('capture');
+    const video = document.getElementById('cam');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoData = document.getElementById('photoData');
+    const clearPhotoBtn = document.getElementById('clearPhoto');
+    let stream;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        // Hide start button while camera is active; show capture
+        startCamBtn.style.display = 'none';
+        captureBtn.style.display = '';
+      } catch (e) {
+        alert('Unable to access camera: ' + e.message);
+      }
+    }
+    startCamBtn.addEventListener('click', startCamera);
+
+    captureBtn.addEventListener('click', async () => {
+      if (!stream) { alert('Start the camera first'); return; }
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      photoPreview.src = dataUrl;
+      photoPreview.classList.remove('hidden');
+      photoData.value = dataUrl;
+      // Hide capture, show clear button
+      captureBtn.style.display = 'none';
+      clearPhotoBtn.classList.remove('hidden');
+      // Also hide Start Camera after capture
+      startCamBtn.style.display = 'none';
+      // Hide live camera and stop stream
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      video.srcObject = null;
+      video.classList.add('hidden');
+    });
+
+    // Clear captured photo and allow re-capture
+    clearPhotoBtn.addEventListener('click', () => {
+      photoPreview.src = '';
+      photoPreview.classList.add('hidden');
+      photoData.value = '';
+      clearPhotoBtn.classList.add('hidden');
+      captureBtn.style.display = '';
+      // Show Start Camera so user can re-open camera
+      startCamBtn.style.display = '';
+      // Keep video hidden until user explicitly starts camera again
+      video.srcObject = null;
+      video.classList.add('hidden');
+    });
+
+    function previewFile(inputEl, imgEl) {
+      inputEl.addEventListener('change', () => {
+        const f = inputEl.files && inputEl.files[0];
+        if (!f) { imgEl.src = ''; imgEl.classList.add('hidden'); return; }
+        const reader = new FileReader();
+        reader.onload = () => { imgEl.src = reader.result; imgEl.classList.remove('hidden'); };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    previewFile(document.getElementById('aadFront'), document.getElementById('aadFrontPreview'));
+    previewFile(document.getElementById('aadBack'), document.getElementById('aadBackPreview'));
+
+    // Add/remove token inputs
+    const tokensWrap = document.getElementById('tokens');
+    document.getElementById('addToken').addEventListener('click', () => {
+      const idx = tokensWrap.querySelectorAll('.token-row').length;
+      const row = document.createElement('div');
+      row.className = 'token-row';
+      row.innerHTML = `
+        <input id="token-${idx}" class="token-input" type="text" placeholder="Enter token number" />
+        <div class="token-actions">
+          <button class=\"icon-btn remove\" type=\"button\" aria-label=\"Remove token\">&times;</button>
+        </div>`;
+      tokensWrap.appendChild(row);
+      row.querySelector('.remove').addEventListener('click', () => row.remove());
+      row.querySelector('input').focus();
+    });
+
+    // Submit handling: save to localStorage users list and increment gold_registration count
+    document.getElementById('goldForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const tokenVals = Array.from(document.querySelectorAll('.token-input'))
+        .map(i => i.value.trim()).filter(Boolean);
+      if (tokenVals.length === 0) { alert('Please enter at least one token number.'); return; }
+      const token = tokenVals.join(', ');
+      const draw = document.getElementById('draw').value.trim();
+      const lang = document.getElementById('lang').value;
+      const agreed = document.getElementById('agree').checked;
+      if (!agreed) { alert('You must accept the agreement to continue.'); return; }
+
+      const entry = {
+        id: 'G-' + Math.floor(1000 + Math.random()*9000),
+        name,
+        phone: tokenVals[0] || '', // displayed as phone on dashboard
+        token,
+        tokens: tokenVals,
+        draw,
+        form: 'gold',
+        createdAt: new Date().toISOString(),
+        lang
+      };
+
+      try {
+        const raw = localStorage.getItem('users');
+        const list = raw ? JSON.parse(raw) : [];
+        list.push(entry);
+        localStorage.setItem('users', JSON.stringify(list));
+        // Increment count
+        const cRaw = localStorage.getItem('gold_registration');
+        const c = parseInt(cRaw, 10);
+        localStorage.setItem('gold_registration', String(Number.isFinite(c) ? c + 1 : 1));
+        alert('Registration submitted successfully.');
+        e.target.reset();
+        setAgreement();
+        photoPreview.src = '';
+        photoPreview.classList.add('hidden');
+        clearPhotoBtn.classList.add('hidden');
+        captureBtn.style.display = '';
+        startCamBtn.style.display = '';
+        // Ensure camera is off and video hidden after submit
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        video.srcObject = null;
+        video.classList.add('hidden');
+        const afp = document.getElementById('aadFrontPreview');
+        const abp = document.getElementById('aadBackPreview');
+        afp.src = ''; afp.classList.add('hidden');
+        abp.src = ''; abp.classList.add('hidden');
+        // Reset tokens input to single row
+        tokensWrap.innerHTML = '';
+        const baseRow = document.createElement('div');
+        baseRow.className = 'token-row';
+        baseRow.innerHTML = `
+          <input id="token-0" class="token-input" type="text" placeholder="Enter token number" required />
+          <div class="token-actions">
+            <button class=\"icon-btn add\" id=\"addToken\" type=\"button\" aria-label=\"Add token\">+</button>
+          </div>`;
+        tokensWrap.appendChild(baseRow);
+        document.getElementById('addToken').addEventListener('click', () => {
+          const idx = tokensWrap.querySelectorAll('.token-row').length;
+          const row = document.createElement('div');
+          row.className = 'token-row';
+          row.innerHTML = `
+            <input id="token-${idx}" class="token-input" type="text" placeholder="Enter token number" />
+            <div class=\"token-actions\"> <button class=\"icon-btn remove\" type=\"button\">&times;</button> </div>`;
+          tokensWrap.appendChild(row);
+          row.querySelector('.remove').addEventListener('click', () => row.remove());
+          row.querySelector('input').focus();
+        });
+      } catch (err) {
+        alert('Failed to save: ' + err.message);
+      }
+    });
+
+    window.addEventListener('beforeunload', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });
+  </script>
+</body>
+</html>
