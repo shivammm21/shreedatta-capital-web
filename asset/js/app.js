@@ -29,15 +29,36 @@ if (form) {
       return;
     }
 
-    // Validate credentials
-    if (username === 'admin' && password === 'admin') {
-      // naive auth flag
-      try { localStorage.setItem('auth', '1'); } catch (_) {}
-      window.location.href = 'dashboard.html';
-      return;
-    }
+    // Server-side validation against DB
+    const btn = form.querySelector('button[type="submit"]');
+    const prevText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
+    // Clear previous error
+    if (error) error.textContent = '';
 
-    if (error) error.textContent = 'Invalid credentials. Try admin/admin.';
+    fetch('login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin', // send cookies for PHP session
+      cache: 'no-store',
+      body: JSON.stringify({ username, password })
+    })
+      .then(async (res) => {
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* non-JSON */ }
+        if (!res.ok || !data.ok) {
+          const msg = (data && (data.error || (data.debug && data.debug.message))) || (res.status >= 500 ? 'Server error' : 'Invalid username or password');
+          throw new Error(msg);
+        }
+        try { localStorage.setItem('auth', '1'); } catch (_) {}
+        window.location.href = 'dashboard.html';
+      })
+      .catch((err) => {
+        if (error) error.textContent = err && err.message ? err.message : 'Login failed';
+      })
+      .finally(() => {
+        if (btn) { btn.disabled = false; btn.textContent = prevText || 'Sign in'; }
+      });
   });
 }
 
