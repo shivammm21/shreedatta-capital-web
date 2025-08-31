@@ -27,6 +27,7 @@
     .actions { display:flex; gap:10px; justify-content:flex-end; }
     button.btn { appearance:none; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; background:#111827; color:#fff; cursor:pointer; }
     button.btn.secondary { background:#fff; color:#111827; }
+    button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .agreement { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
     .agreement p { margin:0; font-size: 13px; line-height: 1.4; }
 
@@ -62,8 +63,12 @@
       <form id="goldForm">
         <div class="grid">
           <div>
-            <label for="name">Name of the user</label>
-            <input id="name" name="name" type="text" required />
+            <label for="firstName">First name</label>
+            <input id="firstName" name="firstName" type="text" required />
+          </div>
+          <div>
+            <label for="lastName">Last name</label>
+            <input id="lastName" name="lastName" type="text" required />
           </div>
           <div>
             <label for="token-0">Token number(s)</label>
@@ -139,7 +144,7 @@
 
         <div class="actions">
           <button type="reset" class="btn secondary">Reset</button>
-          <button type="submit" class="btn">Submit</button>
+          <button type="submit" class="btn" id="submitBtn" disabled>Submit</button>
         </div>
       </form>
     </div>
@@ -155,7 +160,7 @@
 5) You will not be able to exit the draw within 21 months. If you exit the draw for any reason within 21 months, your deposited amount will be received in the 22nd month after the draw is completed.<br>
 6) If you are sending your membership fee from another number, it is mandatory to write your name, token number and draw color along with it, otherwise your membership fee will be considered as not deposited and your number will be removed.<br>
 7) Please note that if you do not complete the 21-month period of the draw, you will not be given the additional amount of Rs. 1000/-.<br>
-8) I have read all the above terms and conditions and I agree to them.`,
+8) I, __NAME__, have read all the above terms and conditions and I agree to them.`,
       hi: `<strong>नियम और शर्तें:</strong><br><br>
 1) श्री दत्त कैपिटल के ड्रॉ में सदस्य बनने के लिए रु. 1000/- सदस्यता शुल्क भरकर अपना नंबर बुक करना अनिवार्य है।<br>
 2) सदस्य बनने के लिए आवश्यक कागजात की पूर्ति करना आवश्यक है।<br>
@@ -164,7 +169,7 @@
 5) आप 21 महीने की अवधि के भीतर ड्रॉ से बाहर नहीं निकल सकेंगे, यदि आप किसी भी कारण से 21 महीने की अवधि के भीतर ड्रॉ से बाहर निकलते हैं, तो आपकी जमा राशि ड्रॉ पूरा होने के बाद 22वें महीने में मिलेगी।<br>
 6) यदि आप अपनी सदस्यता शुल्क दूसरे नंबर से भेज रहे हैं, तो उसके साथ अपना नाम, टोकन नंबर और ड्रॉ कलर लिखना अनिवार्य है, अन्यथा आपकी सदस्यता शुल्क जमा नहीं हुई मानी जाएगी और आपका नंबर हटा दिया जाएगा।<br>
 7) कृपया ध्यान दें कि यदि आप ड्रॉ की 21 महीने की अवधि पूरी नहीं करते हैं तो आपको रु. 1000/- की अतिरिक्त राशि नहीं दी जाएगी।<br>
-8) मैंने उपरोक्त सभी नियम और शर्तें पढ़ी हैं और मैं उनसे सहमत हूं।`,
+8) मैं, __NAME__, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।`,
       mr: `<strong>नियम व अटी:</strong><br><br>
 1) श्री दत्त कॅपिटल च्या ड्रॉ मध्ये सभासद होण्याकरिता रु. 1000/- सभासद फी भरून आपला नंबर बुक करणे बंधनकारक आहे।<br>
 2) सभासद होण्याकरिता आवश्यक कागदपत्रांची पुर्तता करणे गरजेचे आहे।<br>
@@ -173,14 +178,89 @@
 5) आपणास 21 महिने कालावधी च्या आत ड्रॉ मधुन बाहेर पडता येणार नाही, आपण कुठल्याही कारणास्तव 21 महिने कालावधी च्या आत ड्रॉ मधुन बाहेर पडल्यास, आपली जमा रक्कम ड्रॉ पूर्ण झाल्यावर 22 व्या महिन्यात मिळेल।<br>
 6) आपण आपली सभासद फी दुसऱ्या नंबर वरून पाठवणार असल्यास, त्या सोबत आपले नाव, टोकन नंबर आणि ड्रॉ कलर, लिहून पाठवणे बंधनकारक आहे, अन्यथा आपली सभासद फी जमा झालेली नाही असे समजुन आपला नंबर बाजुला काढण्यात येईल।<br>
 7) जर आपण ड्रॉ चा 21 महिन्यांचा कालावधी पूर्ण केला नाही तर आपणास मिळणारी रु. 1000/- वाढीव रक्कम, दिली जाणार नाही याची नोंद घ्यावी।<br>
-8) वरील सर्व अटी व शर्ती मी वाचल्या आहेत व त्या मला मान्य आहेत।`
+8) मी, __NAME__, वरील सर्व अटी व शर्ती वाचल्या असून त्या मला मान्य आहेत।`
     };
+
+    // Build localized name for insertion in point 8
+    function getFullName() {
+      const f = (document.getElementById('firstName')?.value || '').trim();
+      const l = (document.getElementById('lastName')?.value || '').trim();
+      return `${f} ${l}`.trim();
+    }
+
+    // Simple English -> Devanagari transliteration for Hindi/Marathi
+    function transliterateName(name, lang) {
+      if (!name) return '';
+      if (lang === 'en') return name;
+      // Both hi and mr use Devanagari; this is a basic approximation
+      const map = {
+        'a':'अ','aa':'आ','i':'इ','ee':'ई','u':'उ','oo':'ऊ','e':'ए','ai':'ऐ','o':'ओ','au':'औ',
+        'ka':'क','kha':'ख','ga':'ग','gha':'घ','cha':'च','chha':'छ','ja':'ज','jha':'झ','ta':'ट','tha':'ठ','da':'ड','dha':'ढ','na':'न',
+        'pa':'प','pha':'फ','ba':'ब','bha':'भ','ma':'म','ya':'य','ra':'र','la':'ल','va':'व','sa':'स','sha':'श','ssa':'ष','ha':'ह',
+        'ka':'क','ga':'ग','ta':'त','da':'द'
+      };
+      // Extremely naive: replace common digraphs first
+      let s = name.toLowerCase();
+      const seq = ['chha','jha','tha','dha','sha','ssa','aa','ee','oo','ai','au'];
+      seq.forEach(k=>{ s = s.replaceAll(k, map[k]||k); });
+      // Then single letters
+      s = s.replaceAll('k', 'क').replaceAll('g','ग').replaceAll('c','क').replaceAll('j','ज')
+           .replaceAll('t','त').replaceAll('d','द').replaceAll('n','न').replaceAll('p','प')
+           .replaceAll('b','ब').replaceAll('m','म').replaceAll('y','य').replaceAll('r','र')
+           .replaceAll('l','ल').replaceAll('v','व').replaceAll('w','व').replaceAll('s','स')
+           .replaceAll('h','ह').replaceAll('a','अ').replaceAll('i','इ').replaceAll('u','उ')
+           .replaceAll('e','ए').replaceAll('o','ओ');
+      // Capitalize first letters roughly by copying original case where possible
+      const parts = s.split(/\s+/).map((part, idx) => part ? part[0] + part.slice(1) : part);
+      return parts.join(' ');
+    }
 
     const langSel = document.getElementById('lang');
     const agreementText = document.getElementById('agreementText');
-    function setAgreement() { agreementText.innerHTML = texts[langSel.value] || texts.en; }
+    const submitBtn = document.getElementById('submitBtn');
+    function setAgreement() {
+      const lang = langSel.value;
+      const base = texts[lang] || texts.en;
+      const name = getFullName();
+      const nameLocalized = name;
+      agreementText.innerHTML = base.replaceAll('__NAME__', nameLocalized || '__NAME__');
+    }
     setAgreement();
     langSel.addEventListener('change', setAgreement);
+    // Also refresh when user types name
+    document.getElementById('firstName')?.addEventListener('input', setAgreement);
+    document.getElementById('lastName')?.addEventListener('input', setAgreement);
+
+    // Validation helpers
+    function formIsValid() {
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
+      const draw = document.getElementById('draw').value.trim();
+      const agreed = document.getElementById('agree').checked;
+      const tokenVals = Array.from(document.querySelectorAll('.token-input'))
+        .map(i => i.value.trim()).filter(Boolean);
+      const photo = document.getElementById('photoData').value.trim();
+      const af = document.getElementById('aadFront');
+      const ab = document.getElementById('aadBack');
+      const hasFront = af && af.files && af.files.length > 0;
+      const hasBack = ab && ab.files && ab.files.length > 0;
+      return first && last && draw && tokenVals.length > 0 && agreed && photo && hasFront && hasBack;
+    }
+
+    function updateSubmitState() {
+      submitBtn.disabled = !formIsValid();
+    }
+
+    // Initial state
+    updateSubmitState();
+
+    // Watch inputs and fields
+    document.getElementById('firstName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
+    document.getElementById('lastName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
+    document.getElementById('draw').addEventListener('input', updateSubmitState);
+    document.getElementById('agree').addEventListener('change', updateSubmitState);
+    document.getElementById('aadFront').addEventListener('change', updateSubmitState);
+    document.getElementById('aadBack').addEventListener('change', updateSubmitState);
 
     // Camera handling
     const startCamBtn = document.getElementById('startCam');
@@ -228,6 +308,7 @@
       }
       video.srcObject = null;
       video.classList.add('hidden');
+      updateSubmitState();
     });
 
     // Clear captured photo and allow re-capture
@@ -269,14 +350,22 @@
           <button class=\"icon-btn remove\" type=\"button\" aria-label=\"Remove token\">&times;</button>
         </div>`;
       tokensWrap.appendChild(row);
-      row.querySelector('.remove').addEventListener('click', () => row.remove());
+      row.querySelector('.remove').addEventListener('click', () => { row.remove(); updateSubmitState(); });
       row.querySelector('input').focus();
+      updateSubmitState();
+    });
+
+    // Delegate token input changes for dynamic rows
+    tokensWrap.addEventListener('input', (e) => {
+      if (e.target && e.target.classList.contains('token-input')) updateSubmitState();
     });
 
     // Submit handling: save to localStorage users list and increment gold_registration count
     document.getElementById('goldForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value.trim();
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
+      const name = `${first} ${last}`.trim();
       const tokenVals = Array.from(document.querySelectorAll('.token-input'))
         .map(i => i.value.trim()).filter(Boolean);
       if (tokenVals.length === 0) { alert('Please enter at least one token number.'); return; }
@@ -285,6 +374,9 @@
       const lang = document.getElementById('lang').value;
       const agreed = document.getElementById('agree').checked;
       if (!agreed) { alert('You must accept the agreement to continue.'); return; }
+      if (!document.getElementById('photoData').value.trim()) { alert('Please capture a live photo.'); return; }
+      if (!(document.getElementById('aadFront').files?.length)) { alert('Please attach Aadhaar front.'); return; }
+      if (!(document.getElementById('aadBack').files?.length)) { alert('Please attach Aadhaar back.'); return; }
 
       const entry = {
         id: 'G-' + Math.floor(1000 + Math.random()*9000),
@@ -341,12 +433,19 @@
             <input id="token-${idx}" class="token-input" type="text" placeholder="Enter token number" />
             <div class=\"token-actions\"> <button class=\"icon-btn remove\" type=\"button\">&times;</button> </div>`;
           tokensWrap.appendChild(row);
-          row.querySelector('.remove').addEventListener('click', () => row.remove());
+          row.querySelector('.remove').addEventListener('click', () => { row.remove(); updateSubmitState(); });
           row.querySelector('input').focus();
+          updateSubmitState();
         });
+        updateSubmitState();
       } catch (err) {
         alert('Failed to save: ' + err.message);
       }
+    });
+
+    // Re-evaluate on form reset
+    document.getElementById('goldForm').addEventListener('reset', () => {
+      setTimeout(() => { setAgreement(); updateSubmitState(); }, 0);
     });
 
     window.addEventListener('beforeunload', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });

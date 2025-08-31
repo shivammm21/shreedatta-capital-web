@@ -167,7 +167,6 @@ if (dashboardRoot) {
       return `${base}/bike/participants/${u.id}`;
     };
 
-    const buildDocUrl = (u) => `${buildUrl(u)}/document`;
     const buildPdfUrl = (u) => `${buildUrl(u)}/pdf`;
 
     const formatDT = (iso) => {
@@ -199,11 +198,6 @@ if (dashboardRoot) {
         tdWhen.textContent = formatDT(u.createdAt);
         const tdAct = document.createElement('td');
         tdAct.className = 'user-actions';
-        const btnDoc = document.createElement('button');
-        btnDoc.type = 'button';
-        btnDoc.className = 'btn-doc';
-        btnDoc.textContent = 'Document';
-        btnDoc.addEventListener('click', () => window.open(buildDocUrl(u), '_blank'));
         const btnPdf = document.createElement('button');
         btnPdf.type = 'button';
         btnPdf.className = 'btn-pdf';
@@ -214,7 +208,7 @@ if (dashboardRoot) {
         btnDel.className = 'btn-danger';
         btnDel.textContent = 'Delete';
         btnDel.addEventListener('click', () => openConfirm(u.id));
-        tdAct.append(btnDoc, btnPdf, btnDel);
+        tdAct.append(btnPdf, btnDel);
         tr.append(tdUser, tdForm, tdWhen, tdAct);
         frag.appendChild(tr);
       });
