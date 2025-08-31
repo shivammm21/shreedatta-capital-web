@@ -9,19 +9,19 @@
     /* Page-level overrides to allow scrolling (global CSS centers body with grid+100% height) */
     html, body.form-page { height: auto; min-height: 100%; overflow-y: auto; }
     body.form-page { display: block; place-items: initial; padding: 0; -webkit-overflow-scrolling: touch; }
-    .container { max-width: 920px; margin: 32px auto; padding: 20px; overflow: visible; }
-    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .container { max-width: 920px; margin: 32px auto; padding: 20px; overflow: visible; box-sizing: border-box; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); box-sizing: border-box; }
     .title { font-size: 22px; font-weight: 700; margin-bottom: 16px; }
     form { display: grid; gap: 16px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
     label { display:block; font-size: 14px; color: #374151; margin-bottom: 6px; }
-    input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; }
-    input[type="file"] { width: 100%; }
+    input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    input[type="file"] { width: 100%; box-sizing: border-box; }
     .row { display:flex; align-items:center; gap: 12px; }
     .hint { font-size: 12px; color: #6b7280; }
     .media { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .media .box { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px; }
+    .media .box { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px; box-sizing: border-box; }
     .media .preview { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
     .hidden { display: none !important; }
     .actions { display:flex; gap:10px; justify-content:flex-end; }
@@ -30,6 +30,61 @@
     button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .agreement { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
     .agreement p { margin:0; font-size: 13px; line-height: 1.4; }
+
+    /* Header styles */
+    .form-header { 
+      border: 1px solid #fed7aa; 
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 24px; 
+      display: flex; 
+      align-items: center; 
+      gap: 16px;
+      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.15);
+    }
+    .form-header .logo { 
+      width: 60px; 
+      height: 60px; 
+      border-radius: 20%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 28px; 
+      color: white; 
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+    }
+    .form-header .content h1 { 
+      margin: 0; 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: #9a3412; 
+      line-height: 1.2;
+    }
+    .form-header .content h2 { 
+      margin: 4px 0 0 0; 
+      font-size: 16px; 
+      font-weight: 500; 
+      color: #000000; 
+      line-height: 1.2;
+    }
+    @media (max-width: 640px) {
+      .form-header { 
+        padding: 16px; 
+        gap: 12px; 
+      }
+      .form-header .logo { 
+        width: 50px; 
+        height: 50px; 
+        font-size: 24px; 
+      }
+      .form-header .content h1 { 
+        font-size: 20px; 
+      }
+      .form-header .content h2 { 
+        font-size: 14px; 
+      }
+    }
 
     /* Token chips row */
     .tokens { display: grid; gap: 10px; }
@@ -44,22 +99,46 @@
     .clear-btn { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 999px; border: 1px solid #e5e7eb; background:#fff; color:#111827; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
     .clear-btn:active { transform: scale(0.98); }
 
+    /* Better spacing and sizing */
+    .grid > div { 
+      min-width: 0; 
+    }
+    .tokens { 
+      width: 100%; 
+      box-sizing: border-box; 
+    }
+    .token-row { 
+      width: 100%; 
+      box-sizing: border-box; 
+    }
+    .token-input { 
+      min-width: 0; 
+      flex: 1; 
+    }
+
     /* Mobile tweaks */
     @media (max-width: 640px) {
       .container { padding: 12px; margin: 16px auto; }
-      .media { grid-template-columns: 1fr; }
+      .media { grid-template-columns: 1fr; gap: 12px; }
       .actions { flex-direction: column; }
       .actions .btn { width: 100%; }
-      .token-row { grid-template-columns: 1fr 56px; }
+      .token-row { grid-template-columns: 1fr 56px; gap: 8px; }
       #cam { width: 100%; height: auto; aspect-ratio: 4 / 3; }
       .media .preview { height: 160px; }
+      .grid { gap: 12px; }
     }
   </style>
 </head>
 <body class="form-page">
   <div class="container">
+    <div class="form-header">
+      <div class="logo">⚙️</div>
+      <div class="content">
+        <h1>Shree Datta Capital</h1>
+        <h2>Cash Draw Agreement</h2>
+      </div>
+    </div>
     <div class="card">
-      <div class="title">Cash draw registration page</div>
       <form id="goldForm">
         <div class="grid">
           <div>
