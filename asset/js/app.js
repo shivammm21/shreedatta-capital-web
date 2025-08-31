@@ -193,7 +193,7 @@ if (dashboardRoot) {
         const tdUser = document.createElement('td');
         tdUser.textContent = `${u.name}`;
         const tdForm = document.createElement('td');
-        tdForm.textContent = u.form;
+        tdForm.textContent = u.form.charAt(0).toUpperCase() + u.form.slice(1);
         const tdWhen = document.createElement('td');
         tdWhen.textContent = formatDT(u.createdAt);
         const tdAct = document.createElement('td');
