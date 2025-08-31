@@ -205,8 +205,15 @@ if (dashboardRoot) {
         btnPdf.addEventListener('click', () => window.open(buildPdfUrl(u), '_blank'));
         const btnDel = document.createElement('button');
         btnDel.type = 'button';
-        btnDel.className = 'btn-danger';
-        btnDel.textContent = 'Delete';
+        btnDel.className = 'btn-icon-delete';
+        btnDel.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3,6 5,6 21,6"></polyline>
+          <path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2-0.9 2-2l1-14"></path>
+          <path d="m10,11 0,6"></path>
+          <path d="m14,11 0,6"></path>
+          <path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path>
+        </svg>`;
+        btnDel.title = 'Delete';
         btnDel.addEventListener('click', () => openConfirm(u.id));
         tdAct.append(btnPdf, btnDel);
         tr.append(tdUser, tdForm, tdWhen, tdAct);
