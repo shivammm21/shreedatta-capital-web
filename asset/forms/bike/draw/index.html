@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gold draw registration page</title>
+  <title>Bike draw registration page</title>
   <link rel="stylesheet" href="/asset/css/style.css" />
   <style>
     /* Page-level overrides to allow scrolling (global CSS centers body with grid+100% height) */
@@ -58,7 +58,7 @@
 <body class="form-page">
   <div class="container">
     <div class="card">
-      <div class="title">Gold draw registration page</div>
+      <div class="title">Bike draw registration page</div>
       <form id="goldForm">
         <div class="grid">
           <div>
@@ -147,14 +147,38 @@
 
   <script>
     const texts = {
-      en: 'I hereby confirm that the details provided are true and I consent to participate in the Gold draw. I understand and agree to the terms and conditions.',
-      hi: 'मैं पुष्टि करता/करती हूँ कि दी गई जानकारी सत्य है और मैं गोल्ड ड्रॉ में भाग लेने के लिए सहमत हूँ। मैं नियम और शर्तों से सहमत हूँ।',
-      mr: 'मी दिलेली माहिती खरी असल्याची पुष्टी करतो/करते आणि मी गोल्ड ड्रॉमध्ये सहभागी होण्यास सहमत आहे. मी नियम व अटींना सहमत आहे.'
+      en: `<strong>Terms and Conditions:</strong><br><br>
+1) To become a member of Shree Datta Capital's draw, it is mandatory to pay Rs. 1000/- membership fee and book your number.<br>
+2) It is necessary to complete the required documentation to become a member.<br>
+3) Your membership fee must be deposited 1 day before the draw.<br>
+4) Your membership fee should be sent in cash form or on the scanner sent in the group. Payments sent to any personal number will not be accepted, and your number will be removed.<br>
+5) You will not be able to exit the draw within 21 months. If you exit the draw for any reason within 21 months, your deposited amount will be received in the 22nd month after the draw is completed.<br>
+6) If you are sending your membership fee from another number, it is mandatory to write your name, token number and draw color along with it, otherwise your membership fee will be considered as not deposited and your number will be removed.<br>
+7) Please note that if you do not complete the 21-month period of the draw, you will not be given the additional amount of Rs. 1000/-.<br>
+8) I have read all the above terms and conditions and I agree to them.`,
+      hi: `<strong>नियम और शर्तें:</strong><br><br>
+1) श्री दत्त कैपिटल के ड्रॉ में सदस्य बनने के लिए रु. 1000/- सदस्यता शुल्क भरकर अपना नंबर बुक करना अनिवार्य है।<br>
+2) सदस्य बनने के लिए आवश्यक कागजात की पूर्ति करना आवश्यक है।<br>
+3) आपकी सदस्यता शुल्क ड्रॉ के 1 दिन पहले जमा करना अनिवार्य होगा।<br>
+4) आपकी सदस्यता शुल्क नकद रूप में या ग्रुप में भेजे गए स्कैनर पर भेजनी चाहिए, किसी भी व्यक्तिगत नंबर पर भेजी गई राशि स्वीकार नहीं की जाएगी, और आपका नंबर हटा दिया जाएगा।<br>
+5) आप 21 महीने की अवधि के भीतर ड्रॉ से बाहर नहीं निकल सकेंगे, यदि आप किसी भी कारण से 21 महीने की अवधि के भीतर ड्रॉ से बाहर निकलते हैं, तो आपकी जमा राशि ड्रॉ पूरा होने के बाद 22वें महीने में मिलेगी।<br>
+6) यदि आप अपनी सदस्यता शुल्क दूसरे नंबर से भेज रहे हैं, तो उसके साथ अपना नाम, टोकन नंबर और ड्रॉ कलर लिखना अनिवार्य है, अन्यथा आपकी सदस्यता शुल्क जमा नहीं हुई मानी जाएगी और आपका नंबर हटा दिया जाएगा।<br>
+7) कृपया ध्यान दें कि यदि आप ड्रॉ की 21 महीने की अवधि पूरी नहीं करते हैं तो आपको रु. 1000/- की अतिरिक्त राशि नहीं दी जाएगी।<br>
+8) मैंने उपरोक्त सभी नियम और शर्तें पढ़ी हैं और मैं उनसे सहमत हूं।`,
+      mr: `<strong>नियम व अटी:</strong><br><br>
+1) श्री दत्त कॅपिटल च्या ड्रॉ मध्ये सभासद होण्याकरिता रु. 1000/- सभासद फी भरून आपला नंबर बुक करणे बंधनकारक आहे।<br>
+2) सभासद होण्याकरिता आवश्यक कागदपत्रांची पुर्तता करणे गरजेचे आहे।<br>
+3) आपली सभासद फी ड्रॉ च्या 1 दिवस आधी जमा करणे बंधनकारक असेल।<br>
+4) आपली सभासद फी, कॅश स्वरूपात किंवा ग्रुप मध्ये पाठवलेल्या स्कॅनर वर च पाठवावी, कुठल्याही वैयक्तिक नंबर वर पाठवलेले ग्राह्य धरले जाणार नाहीत, आणि आपला नंबर बाजुला काढण्यात येईल।<br>
+5) आपणास 21 महिने कालावधी च्या आत ड्रॉ मधुन बाहेर पडता येणार नाही, आपण कुठल्याही कारणास्तव 21 महिने कालावधी च्या आत ड्रॉ मधुन बाहेर पडल्यास, आपली जमा रक्कम ड्रॉ पूर्ण झाल्यावर 22 व्या महिन्यात मिळेल।<br>
+6) आपण आपली सभासद फी दुसऱ्या नंबर वरून पाठवणार असल्यास, त्या सोबत आपले नाव, टोकन नंबर आणि ड्रॉ कलर, लिहून पाठवणे बंधनकारक आहे, अन्यथा आपली सभासद फी जमा झालेली नाही असे समजुन आपला नंबर बाजुला काढण्यात येईल।<br>
+7) जर आपण ड्रॉ चा 21 महिन्यांचा कालावधी पूर्ण केला नाही तर आपणास मिळणारी रु. 1000/- वाढीव रक्कम, दिली जाणार नाही याची नोंद घ्यावी।<br>
+8) वरील सर्व अटी व शर्ती मी वाचल्या आहेत व त्या मला मान्य आहेत।`
     };
 
     const langSel = document.getElementById('lang');
     const agreementText = document.getElementById('agreementText');
-    function setAgreement() { agreementText.textContent = texts[langSel.value] || texts.en; }
+    function setAgreement() { agreementText.innerHTML = texts[langSel.value] || texts.en; }
     setAgreement();
     langSel.addEventListener('change', setAgreement);
 
@@ -263,13 +287,13 @@
       if (!agreed) { alert('You must accept the agreement to continue.'); return; }
 
       const entry = {
-        id: 'G-' + Math.floor(1000 + Math.random()*9000),
+        id: 'B-' + Math.floor(1000 + Math.random()*9000),
         name,
         phone: tokenVals[0] || '', // displayed as phone on dashboard
         token,
         tokens: tokenVals,
         draw,
-        form: 'gold',
+        form: 'bike',
         createdAt: new Date().toISOString(),
         lang
       };
@@ -280,9 +304,9 @@
         list.push(entry);
         localStorage.setItem('users', JSON.stringify(list));
         // Increment count
-        const cRaw = localStorage.getItem('gold_registration');
+        const cRaw = localStorage.getItem('bike_registration');
         const c = parseInt(cRaw, 10);
-        localStorage.setItem('gold_registration', String(Number.isFinite(c) ? c + 1 : 1));
+        localStorage.setItem('bike_registration', String(Number.isFinite(c) ? c + 1 : 1));
         alert('Registration submitted successfully.');
         e.target.reset();
         setAgreement();
