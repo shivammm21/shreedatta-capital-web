@@ -51,7 +51,7 @@ if (form) {
           throw new Error(msg);
         }
         try { localStorage.setItem('auth', '1'); } catch (_) {}
-        window.location.href = 'dashboard.html';
+        window.location.href = 'dashboard.php';
       })
       .catch((err) => {
         if (error) error.textContent = err && err.message ? err.message : 'Login failed';
@@ -78,13 +78,12 @@ if (dashboardRoot) {
       });
     }
 
-    // Render absolute URLs for category links (single link per block)
+    // Render absolute URLs for category links (single link per block), using existing hrefs
     const origin = window.location.origin || '';
-    const linkEls = dashboardRoot.querySelectorAll('.category-links a[data-path]');
+    const linkEls = dashboardRoot.querySelectorAll('.category-links a.url');
     linkEls.forEach(a => {
-      const path = a.getAttribute('data-path') || '';
-      const absolute = `${origin}${path}`;
-      a.href = absolute;
+      const href = a.getAttribute('href') || '';
+      const absolute = href.startsWith('http') ? href : `${origin}${href.startsWith('/') ? href : `/${href}`}`;
       a.textContent = absolute;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
@@ -96,7 +95,13 @@ if (dashboardRoot) {
       const urlEl = block.querySelector('.category-links a.url');
       const copyBtn = block.querySelector('.category-links .copy-btn');
       if (!urlEl || !copyBtn) return;
-      const getText = () => urlEl.getAttribute('href') || '';
+      const getText = () => {
+        const txt = (urlEl.textContent || '').trim();
+        if (txt.startsWith('http://') || txt.startsWith('https://')) return txt;
+        const href = urlEl.getAttribute('href') || '';
+        const origin = window.location.origin || '';
+        return href.startsWith('http') ? href : `${origin}${href.startsWith('/') ? href : `/${href}`}`;
+      };
       copyBtn.addEventListener('click', async () => {
         const text = getText();
         try {
@@ -126,21 +131,18 @@ if (dashboardRoot) {
       });
     });
 
-    // Populate counts from localStorage (and util to re-render counts)
+    // Count badges in header cards
     const countEls = dashboardRoot.querySelectorAll('[data-count-key]');
-    const renderCounts = () => {
+    const renderCounts = (counts = { gold:0, cash:0, bike:0 }) => {
       countEls.forEach(el => {
         const key = el.getAttribute('data-count-key');
         let val = 0;
-        try {
-          const raw = localStorage.getItem(key);
-          const n = parseInt(raw, 10);
-          val = Number.isFinite(n) ? n : 0;
-        } catch (_) { /* noop */ }
+        if (key === 'gold_registration') val = counts.gold || 0;
+        else if (key === 'cash_registration') val = counts.cash || 0;
+        else if (key === 'bike_registration') val = counts.bike || 0;
         el.textContent = String(val);
       });
     };
-    renderCounts();
 
     // User search and results rendering
     const userRows = document.getElementById('user-rows');
@@ -148,36 +150,27 @@ if (dashboardRoot) {
     const searchInput = document.getElementById('user-search-input');
     const filterButtons = Array.from(dashboardRoot.querySelectorAll('.filter-btn'));
 
-    const getUsers = () => {
-      try {
-        const raw = localStorage.getItem('users');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          // Backfill createdAt if missing
-          const withDates = parsed.map((u, i) => ({
-            ...u,
-            createdAt: u.createdAt || new Date(Date.now() - (parsed.length - i) * 3600_000).toISOString(),
-          }));
-          try { localStorage.setItem('users', JSON.stringify(withDates)); } catch (_) {}
-          return withDates;
-        }
-      } catch (_) {}
-      // Seed demo users if none
-      const now = Date.now();
-      const seed = [
-        { id: 'G-1001', name: 'Ravi Kumar',   phone: '9876543210', form: 'gold', createdAt: new Date(now - 6*3600_000).toISOString() },
-        { id: 'C-2001', name: 'Pooja Shah',   phone: '9123456780', form: 'cash', createdAt: new Date(now - 5*3600_000).toISOString() },
-        { id: 'B-3001', name: 'Amit Verma',   phone: '9012345678', form: 'bike', createdAt: new Date(now - 4*3600_000).toISOString() },
-        { id: 'G-1002', name: 'Sanjay Patel', phone: '9811112222', form: 'gold', createdAt: new Date(now - 3*3600_000).toISOString() },
-        { id: 'C-2002', name: 'Neha Gupta',   phone: '9822223333', form: 'cash', createdAt: new Date(now - 2*3600_000).toISOString() },
-        { id: 'B-3002', name: 'Rahul Singh',  phone: '9833334444', form: 'bike', createdAt: new Date(now - 90*60_000).toISOString() },
-        { id: 'G-1003', name: 'Anita Desai',  phone: '9844445555', form: 'gold', createdAt: new Date(now - 60*60_000).toISOString() },
-        { id: 'C-2003', name: 'Vikas Mehta',  phone: '9855556666', form: 'cash', createdAt: new Date(now - 45*60_000).toISOString() },
-        { id: 'B-3003', name: 'Kiran Rao',    phone: '9866667777', form: 'bike', createdAt: new Date(now - 30*60_000).toISOString() },
-        { id: 'G-1004', name: 'Priya Nair',   phone: '9877778888', form: 'gold', createdAt: new Date(now - 10*60_000).toISOString() },
-      ];
-      try { localStorage.setItem('users', JSON.stringify(seed)); } catch (_) {}
-      return seed;
+    // Convert MySQL 'YYYY-MM-DD HH:MM:SS' to Date
+    const parseMySQLDateTime = (s) => {
+      if (!s) return null;
+      const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})\s+([0-9]{2}):([0-9]{2})(?::([0-9]{2}))?$/.exec(s);
+      if (!m) return null;
+      const [_, Y, M, D, h, i, sec] = m;
+      return new Date(Number(Y), Number(M)-1, Number(D), Number(h), Number(i), Number(sec||'0'));
+    };
+
+    // Load users + counts from backend
+    const getUsers = async () => {
+      const res = await fetch('asset/forms/api/list_users.php', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data && data.error ? data.error : 'Failed to load users');
+      const list = (data.users || []).map(u => ({
+        id: String(u.id),
+        name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+        form: String(u.drawCategory || '').toLowerCase(),
+        createdAt: parseMySQLDateTime(u.dateAndTime),
+      }));
+      return { list, counts: data.counts || {} };
     };
 
     const buildUrl = (u) => {
@@ -189,14 +182,14 @@ if (dashboardRoot) {
 
     const buildPdfUrl = (u) => `${buildUrl(u)}/pdf`;
 
-    const formatDT = (iso) => {
-      if (!iso) return '';
+    const formatDT = (dt) => {
+      if (!dt) return '';
       try {
-        const d = new Date(iso);
+        const d = (dt instanceof Date) ? dt : new Date(dt);
         const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
         const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
         return `${date} ${time}`;
-      } catch { return iso; }
+      } catch { return String(dt); }
     };
 
     const renderUsers = (list) => {
@@ -242,7 +235,7 @@ if (dashboardRoot) {
       userRows.appendChild(frag);
     };
 
-    let users = getUsers();
+    let users = [];
     let activeForm = null; // 'gold' | 'bike' | 'cash' | null
 
     const applyFilters = () => {
@@ -276,23 +269,29 @@ if (dashboardRoot) {
     if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', closeConfirm);
     if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeConfirm(); });
     if (confirmDeleteBtn) {
-      confirmDeleteBtn.addEventListener('click', () => {
+      confirmDeleteBtn.addEventListener('click', async () => {
         if (!pendingDeleteUserId) return;
-        // Remove user from list
-        users = users.filter(u => u.id !== pendingDeleteUserId);
-        try { localStorage.setItem('users', JSON.stringify(users)); } catch (_) {}
-        // Update per-form counts in storage then re-render
-        const gold = users.filter(u => u.form === 'gold').length;
-        const cash = users.filter(u => u.form === 'cash').length;
-        const bike = users.filter(u => u.form === 'bike').length;
+        const prevText = confirmDeleteBtn.textContent;
+        confirmDeleteBtn.disabled = true; confirmDeleteBtn.textContent = 'Deleting...';
         try {
-          localStorage.setItem('gold_registration', String(gold));
-          localStorage.setItem('cash_registration', String(cash));
-          localStorage.setItem('bike_registration', String(bike));
-        } catch (_) {}
-        renderCounts();
-        closeConfirm();
-        applyFilters();
+          const res = await fetch('asset/forms/api/delete_user.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: pendingDeleteUserId })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) throw new Error(data && data.error ? data.error : 'Delete failed');
+          // Reload users and counts from backend
+          const { list, counts } = await getUsers();
+          users = list;
+          renderCounts(counts);
+          closeConfirm();
+          applyFilters();
+        } catch (_) {
+          // keep modal open but re-enable button
+        } finally {
+          confirmDeleteBtn.disabled = false; confirmDeleteBtn.textContent = prevText || 'Delete';
+        }
       });
     }
 
@@ -310,14 +309,27 @@ if (dashboardRoot) {
     if (logoutCancelBtn) logoutCancelBtn.addEventListener('click', closeLogoutConfirm);
     if (logoutModal) logoutModal.addEventListener('click', (e) => { if (e.target === logoutModal) closeLogoutConfirm(); });
     if (logoutConfirmBtn) {
-      logoutConfirmBtn.addEventListener('click', () => {
+      logoutConfirmBtn.addEventListener('click', async () => {
         try { localStorage.removeItem('auth'); } catch (_) {}
+        try {
+          await fetch('logout.php', { method: 'POST', credentials: 'same-origin', cache: 'no-store' });
+        } catch (_) {}
         window.location.replace('index.html');
       });
     }
 
-    // Initial render
-    applyFilters();
+    // Initial load from backend and render
+    (async () => {
+      try {
+        const { list, counts } = await getUsers();
+        users = list;
+        renderCounts(counts);
+      } catch (e) {
+        renderCounts({ gold:0, cash:0, bike:0 });
+      } finally {
+        applyFilters();
+      }
+    })();
 
     // Search by name, phone, or form (case-insensitive)
     if (searchInput) {

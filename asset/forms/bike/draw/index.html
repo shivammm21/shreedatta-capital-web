@@ -161,7 +161,7 @@
       </div>
     </div>
     <div class="card">
-      <form id="goldForm">
+      <form id="goldForm" method="post" enctype="multipart/form-data">
         <div class="grid">
           <div>
             <label for="firstName">First name</label>
@@ -208,13 +208,13 @@
           </div>
           <div class="box">
             <label>Attach Aadhaar (front)</label>
-            <input id="aadFront" type="file" accept="image/*" />
+            <input id="aadFront" name="aadFront" type="file" accept="image/*" />
             <img id="aadFrontPreview" class="preview hidden" alt="Aadhaar front preview" />
             <div class="hint">Upload a clear photo of the front side.</div>
           </div>
           <div class="box">
             <label>Attach Aadhaar (back)</label>
-            <input id="aadBack" type="file" accept="image/*" />
+            <input id="aadBack" name="aadBack" type="file" accept="image/*" />
             <img id="aadBackPreview" class="preview hidden" alt="Aadhaar back preview" />
             <div class="hint">Upload a clear photo of the back side.</div>
           </div>
@@ -230,6 +230,7 @@
               <option value="mr">Marathi</option>
             </select>
           </div>
+          <input type="hidden" id="drawCategory" name="drawCategory" value="bike" />
         </div>
 
         <div class="media">
@@ -248,6 +249,26 @@
           <button type="submit" class="btn" id="submitBtn" disabled>Submit</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:#fff; border-radius:16px; padding:22px; max-width:520px; width:92%; box-shadow:0 18px 40px rgba(0,0,0,0.25); text-align:center;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+        <div style="width:64px; height:64px; border-radius:50%; background:#ecfdf5; display:flex; align-items:center; justify-content:center; color:#10b981;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        </div>
+        <h3 style="margin:0; font-size:22px;">Form submitted successfully</h3>
+        <p id="successMessage" style="margin:0; color:#374151; font-size:14px;"></p>
+        <div id="successMeta" style="margin-top:6px; color:#6b7280; font-size:13px;"></div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+        <a id="downloadPdfBtn" href="#" class="btn secondary hidden" target="_blank" rel="noopener">Download PDF</a>
+        <button id="successClose" class="btn">Close</button>
+      </div>
     </div>
   </div>
 
@@ -365,6 +386,39 @@
       if (e.target && e.target.classList.contains('token-input')) updateSubmitState();
     });
 
+    // Success modal helpers
+    function showSuccess(info) {
+      const modal = document.getElementById('successModal');
+      const msgEl = document.getElementById('successMessage');
+      const metaEl = document.getElementById('successMeta');
+      const closeBtn = document.getElementById('successClose');
+      const dlBtn = document.getElementById('downloadPdfBtn');
+      const { userID, name, category, when, pdfUrl } = (typeof info === 'string') ? { userID: '', name: '', category: 'bike', when: '', pdfUrl: '' } : info || {};
+      // Do not show User ID in the modal
+      msgEl.textContent = 'Your response has been recorded.';
+      metaEl.textContent = [name ? `Name: ${name}` : '', category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '', when ? `Time: ${when}` : ''].filter(Boolean).join(' · ');
+      // Configure Download button
+      if (dlBtn) {
+        if (pdfUrl) {
+          dlBtn.href = pdfUrl;
+          dlBtn.classList.remove('hidden');
+        } else {
+          dlBtn.href = '#';
+          dlBtn.classList.add('hidden');
+        }
+      }
+      modal.classList.remove('hidden');
+      // Focus for accessibility
+      closeBtn.focus();
+      function hide() {
+        modal.classList.add('hidden');
+        document.removeEventListener('keydown', onKey);
+      }
+      function onKey(e) { if (e.key === 'Escape') hide(); }
+      document.addEventListener('keydown', onKey);
+      closeBtn.onclick = hide;
+    }
+
     // Camera handling
     const startCamBtn = document.getElementById('startCam');
     const captureBtn = document.getElementById('capture');
@@ -459,46 +513,47 @@
       updateSubmitState();
     });
 
-    // Submit handling: save to localStorage users list and increment gold_registration count
-    document.getElementById('goldForm').addEventListener('submit', (e) => {
+    // Submit handling: send to backend and then reset UI on success
+    document.getElementById('goldForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const first = document.getElementById('firstName').value.trim();
       const last = document.getElementById('lastName').value.trim();
-      const name = `${first} ${last}`.trim();
-      const tokenVals = Array.from(document.querySelectorAll('.token-input'))
-        .map(i => i.value.trim()).filter(Boolean);
+      const tokenVals = Array.from(document.querySelectorAll('.token-input')).map(i => i.value.trim()).filter(Boolean);
       if (tokenVals.length === 0) { alert('Please enter at least one token number.'); return; }
-      const token = tokenVals.join(', ');
       const draw = document.getElementById('draw').value.trim();
       const lang = document.getElementById('lang').value;
       const agreed = document.getElementById('agree').checked;
       if (!agreed) { alert('You must accept the agreement to continue.'); return; }
-      if (!document.getElementById('photoData').value.trim()) { alert('Please capture a live photo.'); return; }
-      if (!(document.getElementById('aadFront').files?.length)) { alert('Please attach Aadhaar front.'); return; }
-      if (!(document.getElementById('aadBack').files?.length)) { alert('Please attach Aadhaar back.'); return; }
+      const photoVal = document.getElementById('photoData').value.trim();
+      if (!photoVal) { alert('Please capture a live photo.'); return; }
+      const fFront = document.getElementById('aadFront').files;
+      const fBack = document.getElementById('aadBack').files;
+      if (!fFront || !fFront.length) { alert('Please attach Aadhaar front.'); return; }
+      if (!fBack || !fBack.length) { alert('Please attach Aadhaar back.'); return; }
 
-      const entry = {
-        id: 'B-' + Math.floor(1000 + Math.random()*9000),
-        name,
-        phone: tokenVals[0] || '', // displayed as phone on dashboard
-        token,
-        tokens: tokenVals,
-        draw,
-        form: 'bike',
-        createdAt: new Date().toISOString(),
-        lang
-      };
+      const fd = new FormData();
+      fd.append('firstName', first);
+      fd.append('lastName', last);
+      fd.append('draw', draw);
+      fd.append('drawCategory', 'bike');
+      fd.append('lang', lang);
+      fd.append('agreementText', agreementText?.innerText || '');
+      fd.append('photoData', photoVal);
+      fd.append('aadFront', fFront[0]);
+      fd.append('aadBack', fBack[0]);
+      tokenVals.forEach(t => fd.append('tokens[]', t));
 
+      const btn = document.getElementById('submitBtn');
+      const prevText = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const raw = localStorage.getItem('users');
-        const list = raw ? JSON.parse(raw) : [];
-        list.push(entry);
-        localStorage.setItem('users', JSON.stringify(list));
-        // Increment count
-        const cRaw = localStorage.getItem('bike_registration');
-        const c = parseInt(cRaw, 10);
-        localStorage.setItem('bike_registration', String(Number.isFinite(c) ? c + 1 : 1));
-        alert('Registration submitted successfully.');
+        const res = await fetch('../../api/register.php?debug=1', { method: 'POST', body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data && data.error ? data.error : 'Server error');
+        }
+        const when = new Date().toLocaleString(undefined, { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:true });
+        showSuccess({ userID: data.userID, name: `${first} ${last}`.trim(), category: 'bike', when, pdfUrl: data.pdfUrl });
         e.target.reset();
         setAgreement();
         photoPreview.src = '';
@@ -506,7 +561,6 @@
         clearPhotoBtn.classList.add('hidden');
         captureBtn.style.display = '';
         startCamBtn.style.display = '';
-        // Ensure camera is off and video hidden after submit
         if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
         video.srcObject = null;
         video.classList.add('hidden');
@@ -538,7 +592,9 @@
         });
         updateSubmitState();
       } catch (err) {
-        alert('Failed to save: ' + err.message);
+        alert('Failed to submit: ' + (err && err.message ? err.message : err));
+      } finally {
+        btn.disabled = false; btn.textContent = prevText || 'Submit';
       }
     });
 
