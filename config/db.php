@@ -5,9 +5,9 @@
 //   require_once __DIR__ . '/config/db.php';
 //   if (!$conn) { die('DB connection failed'); }
 
-$DB_HOST = '127.0.0.1';
+$DB_HOST = 'localhost';
 $DB_USER = 'root';
-$DB_PASS = 'Shivam@123';
+$DB_PASS = '';
 $DB_NAME = 'shreedatta';
 
 $DEBUG_DB = isset($_GET['debug']) && ($_GET['debug'] === '1' || strtolower($_GET['debug']) === 'true');
@@ -28,11 +28,11 @@ if ($conn->connect_errno) {
     $attempts[] = ['host' => $DB_HOST, 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
     // Attempt 2: 127.0.0.1 + given pass (fix socket issues)
     $conn->close();
-    $conn = try_connect('127.0.0.1', $DB_USER, $DB_PASS, $DB_NAME);
+    $conn = try_connect('localhost', $DB_USER, $DB_PASS, $DB_NAME);
 }
 
 if ($conn->connect_errno) {
-    $attempts[] = ['host' => '127.0.0.1', 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
+    $attempts[] = ['host' => 'localhost', 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
     // Attempt 3/4: if user is root, try empty password on both hosts (common XAMPP default)
     if ($DB_USER === 'root' && $DB_PASS !== '') {
         $conn->close();
@@ -40,7 +40,7 @@ if ($conn->connect_errno) {
         if ($conn->connect_errno) {
             $attempts[] = ['host' => $DB_HOST, 'user' => $DB_USER, 'pass_used' => 'empty', 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
             $conn->close();
-            $conn = try_connect('127.0.0.1', $DB_USER, '', $DB_NAME);
+            $conn = try_connect('localhost', $DB_USER, '', $DB_NAME);
         }
     }
 }

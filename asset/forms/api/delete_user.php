@@ -28,6 +28,15 @@ if ($id <= 0) {
 try {
   $conn->begin_transaction();
 
+  // First, get user details to construct PDF filename before deletion
+  $stmt0 = $conn->prepare('SELECT FirstName, LastName, drawName FROM userTable WHERE ID = ?');
+  if (!$stmt0) throw new Exception('Prepare failed');
+  $stmt0->bind_param('i', $id);
+  if (!$stmt0->execute()) throw new Exception('Execute failed');
+  $result = $stmt0->get_result();
+  $user = $result->fetch_assoc();
+  $stmt0->close();
+
   // Delete from AttachDoc
   $stmt1 = $conn->prepare('DELETE FROM AttachDoc WHERE userID = ?');
   if (!$stmt1) throw new Exception('Prepare failed');
@@ -48,6 +57,31 @@ try {
   $stmt3->bind_param('i', $id);
   if (!$stmt3->execute()) throw new Exception('Execute failed');
   $stmt3->close();
+
+  // Delete associated PDF file if user data was found
+  if ($user) {
+    $firstName = trim($user['FirstName']);
+    $lastName = trim($user['LastName']);
+    $drawName = trim($user['drawName']);
+    
+    // Create safe filename using same logic as register.php
+    $safeName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $firstName . '_' . $lastName);
+    $safeName = preg_replace('/_{2,}/', '_', $safeName);
+    $safeName = trim($safeName, '_');
+    
+    $safeDraw = preg_replace('/[^A-Za-z0-9_-]+/', '-', $drawName);
+    $safeDraw = preg_replace('/[-_]{2,}/', '-', $safeDraw);
+    $safeDraw = trim($safeDraw, '-_');
+    if ($safeDraw === '') $safeDraw = 'draw';
+    
+    $pdfFileName = $safeName . '_' . $safeDraw . '.pdf';
+    $pdfFilePath = __DIR__ . '/../pdfFiles/' . $pdfFileName;
+    
+    // Delete PDF file if it exists
+    if (file_exists($pdfFilePath)) {
+      @unlink($pdfFilePath);
+    }
+  }
 
   $conn->commit();
   echo json_encode(['ok' => true]);

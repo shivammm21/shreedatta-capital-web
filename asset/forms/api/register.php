@@ -192,9 +192,10 @@ try {
     $pdf->SetAutoPageBreak(true, 18);
     $pdf->setFontSubsetting(true); // better Unicode rendering for Hindi/Marathi
     // Hint TCPDF about language and charset
+    $pdfLang = $lang === 'hi' ? 'hi' : ($lang === 'mr' ? 'mr' : 'en');
     $l = [
       'a_meta_charset' => 'UTF-8',
-      'a_meta_language' => 'en',
+      'a_meta_language' => $pdfLang,
       'w_page' => 'page'
     ];
     $pdf->setLanguageArray($l);
@@ -204,17 +205,30 @@ try {
     // No top line – keep clean header like sample
 
     // Resolve a font that supports Devanagari (Hindi/Marathi)
-    $fontFamily = 'freeserif';
-    if (!(file_exists(K_PATH_FONTS . 'freeserif.php') || file_exists(K_PATH_FONTS . 'freeserif.z'))) {
-      // Try to auto-register a bundled custom font if present
-      $customRegular = __DIR__ . '/fonts/NotoSansDevanagari-Regular.ttf';
-      if (file_exists($customRegular)) {
-        $fontFamily = TCPDF_FONTS::addTTFfont($customRegular, 'TrueTypeUnicode', '', 96);
-        // Optionally register bold/italic if available
-        $customBold = __DIR__ . '/fonts/NotoSansDevanagari-Bold.ttf';
-        if (file_exists($customBold)) { TCPDF_FONTS::addTTFfont($customBold, 'TrueTypeUnicode', '', 96); }
-        $customItalic = __DIR__ . '/fonts/NotoSansDevanagari-Italic.ttf';
-        if (file_exists($customItalic)) { TCPDF_FONTS::addTTFfont($customItalic, 'TrueTypeUnicode', '', 96); }
+    $fontFamily = 'dejavusans'; // Default to DejaVu Sans which has better Unicode support
+    
+    // Check if we need Devanagari support based on language
+    $needsDevanagari = ($lang === 'hi' || $lang === 'mr');
+    
+    if ($needsDevanagari) {
+      // Try to use a font with Devanagari support
+      // First try freeserif which should support Devanagari
+      if (file_exists(K_PATH_FONTS . 'freeserif.php') || file_exists(K_PATH_FONTS . 'freeserif.z')) {
+        $fontFamily = 'freeserif';
+      } else {
+        // Try to auto-register a bundled custom font if present
+        $customRegular = __DIR__ . '/fonts/NotoSansDevanagari-Regular.ttf';
+        if (file_exists($customRegular)) {
+          $fontFamily = TCPDF_FONTS::addTTFfont($customRegular, 'TrueTypeUnicode', '', 96);
+          // Optionally register bold/italic if available
+          $customBold = __DIR__ . '/fonts/NotoSansDevanagari-Bold.ttf';
+          if (file_exists($customBold)) { TCPDF_FONTS::addTTFfont($customBold, 'TrueTypeUnicode', '', 96); }
+          $customItalic = __DIR__ . '/fonts/NotoSansDevanagari-Italic.ttf';
+          if (file_exists($customItalic)) { TCPDF_FONTS::addTTFfont($customItalic, 'TrueTypeUnicode', '', 96); }
+        } else {
+          // Fallback to dejavusans which has some Devanagari support
+          $fontFamily = 'dejavusans';
+        }
       }
     }
 
@@ -253,23 +267,48 @@ try {
     // Details block on left
     $pdf->SetFont($fontFamily, '', 13);
     $tokStr = implode(', ', $tokens);
+    
+    // Ensure proper encoding for all text fields
+    $fullName = trim($first . ' ' . $last);
+    if (!mb_check_encoding($fullName, 'UTF-8')) {
+      $fullName = mb_convert_encoding($fullName, 'UTF-8', 'auto');
+    }
+    if (!mb_check_encoding($drawName, 'UTF-8')) {
+      $drawName = mb_convert_encoding($drawName, 'UTF-8', 'auto');
+    }
+    
     $htmlDetails = ''
-      . '<b>Name :</b> ' . htmlspecialchars($first . ' ' . $last) . '<br/><br/>'
-      . '<b>Token number(s):</b> ' . htmlspecialchars($tokStr) . '<br/><br/>'
-      . '<b>Draw Name:</b> ' . htmlspecialchars($drawName) . '<br/><br/>'
-      . '<b>Draw Category:</b> ' . htmlspecialchars(ucfirst($drawCategory)) . ' Draw<br/>';
+      . '<b>Name :</b> ' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '<br/><br/>'
+      . '<b>Token number(s):</b> ' . htmlspecialchars($tokStr, ENT_QUOTES, 'UTF-8') . '<br/><br/>'
+      . '<b>Draw Name:</b> ' . htmlspecialchars($drawName, ENT_QUOTES, 'UTF-8') . '<br/><br/>'
+      . '<b>Draw Category:</b> ' . htmlspecialchars(ucfirst($drawCategory), ENT_QUOTES, 'UTF-8') . ' Draw<br/>';
     $pdf->writeHTMLCell(130, '', 15, $photoY, $htmlDetails, 0, 1, false, true, 'L', true);
 
     // Agreement text (if provided) - render exactly as provided with preserved line breaks
     if ($agreementText !== '') {
       $pdf->Ln(15); // Increased top margin to move agreement closer to green tick
+      
+      // Ensure proper font for the agreement text
       $pdf->SetFont($fontFamily, '', 12);
-      // If the agreement contains HTML tags, render as-is; else preserve newlines
-      if (preg_match('/<\w|<\//', $agreementText)) {
-        $agreementHtml = $agreementText;
-      } else {
-        $agreementHtml = nl2br($agreementText);
+      
+      // Clean and prepare the agreement text
+      $agreementHtml = $agreementText;
+      
+      // If the agreement doesn't contain HTML tags, preserve newlines
+      if (!preg_match('/<\w|<\//', $agreementHtml)) {
+        $agreementHtml = nl2br($agreementHtml);
       }
+      
+      // Ensure proper UTF-8 encoding
+      if (!mb_check_encoding($agreementHtml, 'UTF-8')) {
+        $agreementHtml = mb_convert_encoding($agreementHtml, 'UTF-8', 'auto');
+      }
+      
+      // For Hindi/Marathi, we might need to set text direction
+      if ($needsDevanagari) {
+        $pdf->setRTL(false); // Devanagari is LTR
+      }
+      
       $pdf->writeHTMLCell(0, 0, '', '', $agreementHtml, 0, 1, false, true, 'L', true);
     }
 
@@ -297,6 +336,12 @@ try {
     $pdf->SetFont($fontFamily, 'B', 10);
     $pdf->SetTextColor(0, 0, 0);
     $userName = trim($first . ' ' . $last);
+    
+    // Ensure proper UTF-8 encoding for user name
+    if (!mb_check_encoding($userName, 'UTF-8')) {
+      $userName = mb_convert_encoding($userName, 'UTF-8', 'auto');
+    }
+    
     $pdf->Cell($tickSize + 20, 5, $userName, 0, 1, 'C');
 
     // Add second page for Aadhaar images
