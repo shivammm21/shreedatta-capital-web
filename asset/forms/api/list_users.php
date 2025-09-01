@@ -9,7 +9,7 @@ date_default_timezone_set('Asia/Kolkata');
 
 try {
   $users = [];
-  $sql = "SELECT ID, FirstName, LastName, drawCategory, dateAndTime FROM userTable ORDER BY ID DESC";
+  $sql = "SELECT ID, FirstName, LastName, drawName, drawCategory, dateAndTime FROM userTable ORDER BY ID DESC";
   if (!($res = $conn->query($sql))) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'DB query failed']);
@@ -20,6 +20,7 @@ try {
       'id' => (int)$row['ID'],
       'firstName' => $row['FirstName'],
       'lastName' => $row['LastName'],
+      'drawName' => $row['drawName'],
       'drawCategory' => $row['drawCategory'],
       'dateAndTime' => $row['dateAndTime'], // MySQL DATETIME string
     ];

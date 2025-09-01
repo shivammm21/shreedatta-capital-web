@@ -168,6 +168,7 @@ if (dashboardRoot) {
         id: String(u.id),
         name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
         form: String(u.drawCategory || '').toLowerCase(),
+        drawName: u.drawName || '',
         createdAt: parseMySQLDateTime(u.dateAndTime),
       }));
       return { list, counts: data.counts || {} };
