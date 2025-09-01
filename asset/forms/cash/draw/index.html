@@ -227,8 +227,8 @@
             <label for="lang">Agreement Language</label>
             <select id="lang" name="lang" required>
               <option value="en" selected>English</option>
-              <option value="hi">Hindi</option>
-              <option value="mr">Marathi</option>
+              <option value="hi">हिंदी</option>
+              <option value="mr">मराठी</option>
             </select>
           </div>
           <input type="hidden" id="drawCategory" name="drawCategory" value="cash" />
@@ -546,7 +546,7 @@
       const prevText = btn.textContent;
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('../../api/register.php?debug=1', { method: 'POST', body: fd });
+        const res = await fetch('/shreedatta-capital-web/asset/forms/api/register.php?debug=1', { method: 'POST', body: fd });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) {
           throw new Error(data && data.error ? data.error : 'Server error');

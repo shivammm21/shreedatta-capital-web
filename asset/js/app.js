@@ -180,7 +180,12 @@ if (dashboardRoot) {
       return `${base}/bike/participants/${u.id}`;
     };
 
-    const buildPdfUrl = (u) => `${buildUrl(u)}/pdf`;
+    const buildPdfUrl = (u) => {
+      // Create safe filename: firstName_lastName_drawName.pdf
+      const safeName = u.name.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_{2,}/g, '_').trim('_');
+      const safeDraw = u.drawName ? u.drawName.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/-{2,}/g, '-').trim('-') : u.form.toLowerCase();
+      return `/shreedatta-capital-web/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
+    };
 
     const formatDT = (dt) => {
       if (!dt) return '';

@@ -164,7 +164,11 @@ try {
     $safeDraw = preg_replace('/[-_]{2,}/', '-', $safeDraw); // collapse repeats
     $safeDraw = trim($safeDraw, '-_');
     if ($safeDraw === '') { $safeDraw = 'draw'; }
-    $fileName = $userId . '_' . $safeDraw . '.pdf';
+    // Create safe filename: firstName_lastName_drawName.pdf
+    $safeName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $first . '_' . $last);
+    $safeName = preg_replace('/_{2,}/', '_', $safeName);
+    $safeName = trim($safeName, '_');
+    $fileName = $safeName . '_' . $safeDraw . '.pdf';
     $pdfFsPath = $pdfDir . '/' . $fileName;
     $pdfDebug['pdf_dir'] = $pdfDir;
     $pdfDebug['file_name'] = $fileName;
@@ -219,21 +223,21 @@ try {
     $logoPath = __DIR__ . '/../../images/Logo.png'; // asset/images/Logo.png
     $imgBottom = $yStart;
     if (file_exists($logoPath)) {
-      // Draw logo with fixed height (~22mm) to ensure consistent look; width auto by ratio
+      // Draw logo with increased size (35mm height) and positioned closer to text
       try {
-        $pdf->Image($logoPath, 15, $yStart, 0, 22, '', '', '', true);
+        $pdf->Image($logoPath, 20, $yStart, 0, 45, '', '', '', true); // Increased left margin to 40 and height to 45
         if (method_exists($pdf, 'getImageRBY')) { $imgBottom = max($imgBottom, $pdf->getImageRBY()); }
       } catch (Exception $e) {}
     }
-    // Title next to logo
-    $pdf->SetXY(60, $yStart + 2);
+    // Title next to logo - positioned with more left margin
+    $pdf->SetXY(60, $yStart + 8);
     $pdf->SetTextColor(154, 52, 18); // dark orange-red
-    $pdf->SetFont($fontFamily, 'B', 24);
-    $pdf->Cell(0, 12, 'Shree Datta Capital', 0, 1, 'L');
+    $pdf->SetFont($fontFamily, 'B', 38);
+    $pdf->Cell(0, 14, 'Shree Datta Capital', 0, 1, 'L');
     $pdf->SetX(60);
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont($fontFamily, '', 16);
-    $pdf->Cell(0, 10, ucfirst($drawCategory) . ' Draw Agreement', 0, 1, 'L');
+    $pdf->SetFont($fontFamily, '', 26);
+    $pdf->Cell(0, 12, ucfirst($drawCategory) . ' Draw Agreement', 0, 1, 'L');
     // Move below the tallest of logo/title and draw bottom line
     $titleBottomY = $pdf->GetY();
     $afterHeaderY = max($imgBottom, $titleBottomY) + 2;
@@ -243,22 +247,22 @@ try {
 
     // Place live camera photo on the right of the details block (passport-style)
     // Use in-memory image data via '@' prefix supported by TCPDF
-    $photoX = 150; $photoY = $pdf->GetY() + 2; $photoW = 35; // larger live photo (~35mm width)
-    try { $pdf->Image('@' . $camImage, $photoX, $photoY, $photoW, 0, '', '', '', true); } catch (Exception $e) {}
+    $photoX = 150; $photoY = $pdf->GetY() + 2; $photoW = 40; $photoH = 40; // increased height to 50mm
+    try { $pdf->Image('@' . $camImage, $photoX, $photoY, $photoW, $photoH, '', '', '', true); } catch (Exception $e) {}
 
     // Details block on left
-    $pdf->SetFont($fontFamily, '', 12);
+    $pdf->SetFont($fontFamily, '', 13);
     $tokStr = implode(', ', $tokens);
     $htmlDetails = ''
-      . '<b>Name :</b> ' . htmlspecialchars($first . ' ' . $last) . '<br/>'
-      . '<b>Token number(s):</b> ' . htmlspecialchars($tokStr) . '<br/>'
-      . '<b>Draw Name:</b> ' . htmlspecialchars($drawName) . '<br/>'
-      . '<b>Draw Catogary:</b> ' . htmlspecialchars(ucfirst($drawCategory)) . '<br/>';
+      . '<b>Name :</b> ' . htmlspecialchars($first . ' ' . $last) . '<br/><br/>'
+      . '<b>Token number(s):</b> ' . htmlspecialchars($tokStr) . '<br/><br/>'
+      . '<b>Draw Name:</b> ' . htmlspecialchars($drawName) . '<br/><br/>'
+      . '<b>Draw Category:</b> ' . htmlspecialchars(ucfirst($drawCategory)) . ' Draw<br/>';
     $pdf->writeHTMLCell(130, '', 15, $photoY, $htmlDetails, 0, 1, false, true, 'L', true);
 
     // Agreement text (if provided) - render exactly as provided with preserved line breaks
     if ($agreementText !== '') {
-      $pdf->Ln(2);
+      $pdf->Ln(15); // Increased top margin to move agreement closer to green tick
       $pdf->SetFont($fontFamily, '', 12);
       // If the agreement contains HTML tags, render as-is; else preserve newlines
       if (preg_match('/<\w|<\//', $agreementText)) {
@@ -269,10 +273,88 @@ try {
       $pdf->writeHTMLCell(0, 0, '', '', $agreementHtml, 0, 1, false, true, 'L', true);
     }
 
-    // Footer note
+    // Footer with green tick and user name at bottom right
     $pdf->Ln(6);
-    $pdf->SetFont($fontFamily, 'I', 10);
-    $pdf->Cell(0, 6, 'This is a system-generated document.', 0, 1, 'C');
+    
+    // Position green tick at bottom right
+    $greenTickPath = __DIR__ . '/../../images/greentick.png';
+    $pageHeight = $pdf->getPageHeight();
+    $bottomMargin = 25; // 25mm from bottom
+    $rightMargin = 25;  // 25mm from right
+    $tickSize = 15;     // 15mm size for green tick
+    
+    $tickX = $pdf->getPageWidth() - $rightMargin - $tickSize;
+    $tickY = $pageHeight - $bottomMargin - $tickSize;
+    
+    if (file_exists($greenTickPath)) {
+      try {
+        $pdf->Image($greenTickPath, $tickX, $tickY, $tickSize, $tickSize, '', '', '', true);
+      } catch (Exception $e) {}
+    }
+    
+    // User name below the green tick
+    $pdf->SetXY($tickX - 10, $tickY + $tickSize + 2);
+    $pdf->SetFont($fontFamily, 'B', 10);
+    $pdf->SetTextColor(0, 0, 0);
+    $userName = trim($first . ' ' . $last);
+    $pdf->Cell($tickSize + 20, 5, $userName, 0, 1, 'C');
+
+    // Add second page for Aadhaar images
+    $pdf->AddPage();
+    
+    // Calculate image dimensions for Aadhaar cards (standard ratio is 1:0.63 width:height)
+    $pageWidth = $pdf->getPageWidth();
+    $pageHeight = $pdf->getPageHeight();
+    $margin = 20; // Increased margin for better spacing
+    $availableWidth = $pageWidth - (2 * $margin);
+    
+    // Calculate maximum width and height for Aadhaar cards
+    $maxWidth = $availableWidth * 0.9; // 90% of available width
+    $maxHeight = ($pageHeight / 2) - 40; // Half page height minus some space for headers/footers
+    
+    // Standard Aadhaar card ratio (1:0.63)
+    $aadhaarRatio = 0.63; // height/width ratio
+    
+    // Calculate dimensions that fit within maxWidth and maxHeight while maintaining aspect ratio
+    $imageWidth = min($maxWidth, $maxHeight / $aadhaarRatio);
+    $imageHeight = $imageWidth * $aadhaarRatio;
+    
+    // Center the images horizontally
+    $imageX = ($pageWidth - $imageWidth) / 2;
+    $imageGap = 20; // Gap between front and back images
+    
+    // Center the images horizontally
+    $imageX = ($pageWidth - $imageWidth) / 2;
+    
+    // Position for front image (top)
+    $frontY = $pdf->GetY();
+    
+    // Position for back image (below front image)
+    $backY = $frontY + $imageHeight + $imageGap + 15; // 15mm for label space
+    
+    // Display Aadhaar Front image
+    
+    try {
+      // Add image with auto-fit and maintain aspect ratio
+      $pdf->Image('@' . $aadFrontData, $imageX, $frontY, $imageWidth, 0, '', '', '', true, 300, '', false, false, 0, 'CM', false, false);
+    } catch (Exception $e) {
+      // If image fails, show placeholder
+      $pdf->Rect($imageX, $frontY, $imageWidth, $imageHeight);
+      $pdf->SetXY($imageX, $frontY + ($imageHeight/2));
+      $pdf->Cell($imageWidth, 8, 'Aadhaar Front Image', 0, 0, 'C');
+    }
+    
+    // Display Aadhaar Back image
+    
+    try {
+      // Add image with auto-fit and maintain aspect ratio
+      $pdf->Image('@' . $aadBackData, $imageX, $backY, $imageWidth, 0, '', '', '', true, 300, '', false, false, 0, 'CM', false, false);
+    } catch (Exception $e) {
+      // If image fails, show placeholder
+      $pdf->Rect($imageX, $backY, $imageWidth, $imageHeight);
+      $pdf->SetXY($imageX, $backY + ($imageHeight/2));
+      $pdf->Cell($imageWidth, 8, 'Aadhaar Back Image', 0, 0, 'C');
+    }
 
     // Save to filesystem (suppress TCPDF direct output to avoid corrupting JSON)
     ob_start();
