@@ -70,12 +70,11 @@ if (dashboardRoot) {
     // Not authenticated, send to login
     window.location.replace('index.html');
   } else {
-    // Wire up logout
+    // Wire up logout with confirmation
     const logoutBtn = document.getElementById('logout');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
-        try { localStorage.removeItem('auth'); } catch (_) {}
-        window.location.replace('index.html');
+        openLogoutConfirm();
       });
     }
 
@@ -294,6 +293,26 @@ if (dashboardRoot) {
         renderCounts();
         closeConfirm();
         applyFilters();
+      });
+    }
+
+    // Logout confirmation modal wiring
+    const logoutModal = document.getElementById('logoutModal');
+    const logoutConfirmBtn = document.getElementById('logoutConfirm');
+    const logoutCancelBtn = document.getElementById('logoutCancel');
+
+    const openLogoutConfirm = () => {
+      if (logoutModal) logoutModal.classList.remove('hidden');
+    };
+    const closeLogoutConfirm = () => {
+      if (logoutModal) logoutModal.classList.add('hidden');
+    };
+    if (logoutCancelBtn) logoutCancelBtn.addEventListener('click', closeLogoutConfirm);
+    if (logoutModal) logoutModal.addEventListener('click', (e) => { if (e.target === logoutModal) closeLogoutConfirm(); });
+    if (logoutConfirmBtn) {
+      logoutConfirmBtn.addEventListener('click', () => {
+        try { localStorage.removeItem('auth'); } catch (_) {}
+        window.location.replace('index.html');
       });
     }
 
