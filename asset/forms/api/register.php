@@ -164,7 +164,11 @@ try {
     $safeDraw = preg_replace('/[-_]{2,}/', '-', $safeDraw); // collapse repeats
     $safeDraw = trim($safeDraw, '-_');
     if ($safeDraw === '') { $safeDraw = 'draw'; }
-    $fileName = $userId . '_' . $safeDraw . '.pdf';
+    // Create safe filename: firstName_lastName_drawName.pdf
+    $safeName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $first . '_' . $last);
+    $safeName = preg_replace('/_{2,}/', '_', $safeName);
+    $safeName = trim($safeName, '_');
+    $fileName = $safeName . '_' . $safeDraw . '.pdf';
     $pdfFsPath = $pdfDir . '/' . $fileName;
     $pdfDebug['pdf_dir'] = $pdfDir;
     $pdfDebug['file_name'] = $fileName;
@@ -298,20 +302,26 @@ try {
     // Add second page for Aadhaar images
     $pdf->AddPage();
     
-    // Page 2 header
-    $pdf->SetFont($fontFamily, 'B', 16);
-    $pdf->SetTextColor(154, 52, 18);
-    $pdf->Cell(0, 10, 'Aadhaar Card Images', 0, 1, 'C');
-    $pdf->Ln(10);
-    
-    // Calculate image dimensions for larger display (one below the other)
+    // Calculate image dimensions for Aadhaar cards (standard ratio is 1:0.63 width:height)
     $pageWidth = $pdf->getPageWidth();
     $pageHeight = $pdf->getPageHeight();
-    $margin = 15;
+    $margin = 20; // Increased margin for better spacing
     $availableWidth = $pageWidth - (2 * $margin);
-    $imageWidth = $availableWidth * 0.8; // Use 80% of available width for larger images
-    $imageHeight = $imageWidth * 0.63; // Standard ID card ratio
-    $imageGap = 15; // Gap between images
+    
+    // Calculate maximum width and height for Aadhaar cards
+    $maxWidth = $availableWidth * 0.9; // 90% of available width
+    $maxHeight = ($pageHeight / 2) - 40; // Half page height minus some space for headers/footers
+    
+    // Standard Aadhaar card ratio (1:0.63)
+    $aadhaarRatio = 0.63; // height/width ratio
+    
+    // Calculate dimensions that fit within maxWidth and maxHeight while maintaining aspect ratio
+    $imageWidth = min($maxWidth, $maxHeight / $aadhaarRatio);
+    $imageHeight = $imageWidth * $aadhaarRatio;
+    
+    // Center the images horizontally
+    $imageX = ($pageWidth - $imageWidth) / 2;
+    $imageGap = 20; // Gap between front and back images
     
     // Center the images horizontally
     $imageX = ($pageWidth - $imageWidth) / 2;
@@ -323,13 +333,10 @@ try {
     $backY = $frontY + $imageHeight + $imageGap + 15; // 15mm for label space
     
     // Display Aadhaar Front image
-    $pdf->SetFont($fontFamily, 'B', 14);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetXY($imageX, $frontY - 10);
-    $pdf->Cell($imageWidth, 8, 'Aadhaar Front', 0, 1, 'C');
     
     try {
-      $pdf->Image('@' . $aadFrontData, $imageX, $frontY, $imageWidth, $imageHeight, '', '', '', true);
+      // Add image with auto-fit and maintain aspect ratio
+      $pdf->Image('@' . $aadFrontData, $imageX, $frontY, $imageWidth, 0, '', '', '', true, 300, '', false, false, 0, 'CM', false, false);
     } catch (Exception $e) {
       // If image fails, show placeholder
       $pdf->Rect($imageX, $frontY, $imageWidth, $imageHeight);
@@ -338,11 +345,10 @@ try {
     }
     
     // Display Aadhaar Back image
-    $pdf->SetXY($imageX, $backY - 10);
-    $pdf->Cell($imageWidth, 8, 'Aadhaar Back', 0, 1, 'C');
     
     try {
-      $pdf->Image('@' . $aadBackData, $imageX, $backY, $imageWidth, $imageHeight, '', '', '', true);
+      // Add image with auto-fit and maintain aspect ratio
+      $pdf->Image('@' . $aadBackData, $imageX, $backY, $imageWidth, 0, '', '', '', true, 300, '', false, false, 0, 'CM', false, false);
     } catch (Exception $e) {
       // If image fails, show placeholder
       $pdf->Rect($imageX, $backY, $imageWidth, $imageHeight);
