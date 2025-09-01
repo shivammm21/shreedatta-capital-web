@@ -25,9 +25,10 @@
     .media .preview { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
     .hidden { display: none !important; }
     .actions { display:flex; gap:10px; justify-content:flex-end; }
-    button.btn { appearance:none; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; background:#111827; color:#fff; cursor:pointer; }
-    button.btn.secondary { background:#fff; color:#111827; }
-    button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn { appearance:none; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; background:#111827; color:#fff; cursor:pointer; }
+    .btn.secondary { background:#fff; color:#111827; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
     .agreement { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
     .agreement p { margin:0; font-size: 13px; line-height: 1.4; }
 
@@ -266,7 +267,7 @@
         <div id="successMeta" style="margin-top:6px; color:#6b7280; font-size:13px;"></div>
       </div>
       <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
-        <a id="downloadPdfBtn" href="#" class="btn secondary hidden" target="_blank" rel="noopener">Download PDF</a>
+        <a id="downloadPdfBtn" href="#" class="btn hidden" target="_blank" rel="noopener" role="button">Download PDF</a>
         <button id="successClose" class="btn">Close</button>
       </div>
     </div>

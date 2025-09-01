@@ -158,8 +158,12 @@ try {
     $pdfDebug['dir_exists'] = is_dir($pdfDir);
     $pdfDebug['dir_writable'] = is_writable($pdfDir);
     if (!$pdfDebug['dir_writable']) { @chmod($pdfDir, 0775); $pdfDebug['dir_writable_after_chmod'] = is_writable($pdfDir); }
-    $safeDraw = preg_replace('/[^A-Za-z0-9_-]+/', '-', $drawName);
-    if ($safeDraw === '' ) { $safeDraw = 'draw'; }
+    // Sanitize draw name for filename: trim, replace invalid with hyphen, collapse and trim separators
+    $safeDraw = trim((string)$drawName);
+    $safeDraw = preg_replace('/[^A-Za-z0-9_-]+/', '-', $safeDraw);
+    $safeDraw = preg_replace('/[-_]{2,}/', '-', $safeDraw); // collapse repeats
+    $safeDraw = trim($safeDraw, '-_');
+    if ($safeDraw === '') { $safeDraw = 'draw'; }
     $fileName = $userId . '_' . $safeDraw . '.pdf';
     $pdfFsPath = $pdfDir . '/' . $fileName;
     $pdfDebug['pdf_dir'] = $pdfDir;
@@ -175,48 +179,106 @@ try {
     $pdfUrl = $scheme . '://' . $host . $webPath;
     $pdfDebug['web_path'] = $webPath;
 
-    // Create PDF
+    // Create PDF (A4 portrait)
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
     $pdf->SetCreator(PDF_CREATOR);
     $pdf->SetAuthor('Shree Datta Capital');
     $pdf->SetTitle(ucfirst($drawCategory) . ' Draw Agreement');
     $pdf->SetMargins(15, 15, 15);
-    $pdf->SetAutoPageBreak(true, 15);
+    $pdf->SetAutoPageBreak(true, 18);
+    $pdf->setFontSubsetting(true); // better Unicode rendering for Hindi/Marathi
+    // Hint TCPDF about language and charset
+    $l = [
+      'a_meta_charset' => 'UTF-8',
+      'a_meta_language' => 'en',
+      'w_page' => 'page'
+    ];
+    $pdf->setLanguageArray($l);
     $pdf->AddPage();
 
-    // Header
-    $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, 'Shree Datta Capital', 0, 1, 'C');
-    $pdf->SetFont('helvetica', '', 14);
-    $pdf->Cell(0, 8, ucfirst($drawCategory) . ' Draw Agreement', 0, 1, 'C');
-    $pdf->Ln(2);
-    $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+    // Header area (single line below header only)
+    // No top line – keep clean header like sample
+
+    // Resolve a font that supports Devanagari (Hindi/Marathi)
+    $fontFamily = 'freeserif';
+    if (!(file_exists(K_PATH_FONTS . 'freeserif.php') || file_exists(K_PATH_FONTS . 'freeserif.z'))) {
+      // Try to auto-register a bundled custom font if present
+      $customRegular = __DIR__ . '/fonts/NotoSansDevanagari-Regular.ttf';
+      if (file_exists($customRegular)) {
+        $fontFamily = TCPDF_FONTS::addTTFfont($customRegular, 'TrueTypeUnicode', '', 96);
+        // Optionally register bold/italic if available
+        $customBold = __DIR__ . '/fonts/NotoSansDevanagari-Bold.ttf';
+        if (file_exists($customBold)) { TCPDF_FONTS::addTTFfont($customBold, 'TrueTypeUnicode', '', 96); }
+        $customItalic = __DIR__ . '/fonts/NotoSansDevanagari-Italic.ttf';
+        if (file_exists($customItalic)) { TCPDF_FONTS::addTTFfont($customItalic, 'TrueTypeUnicode', '', 96); }
+      }
+    }
+
+    // Header with logo (left) and big red title similar to sample
+    $yStart = $pdf->GetY();
+    $logoPath = __DIR__ . '/../../images/Logo.png'; // asset/images/Logo.png
+    $imgBottom = $yStart;
+    if (file_exists($logoPath)) {
+      // Draw logo with fixed height (~22mm) to ensure consistent look; width auto by ratio
+      try {
+        $pdf->Image($logoPath, 15, $yStart, 0, 22, '', '', '', true);
+        if (method_exists($pdf, 'getImageRBY')) { $imgBottom = max($imgBottom, $pdf->getImageRBY()); }
+      } catch (Exception $e) {}
+    }
+    // Title next to logo
+    $pdf->SetXY(60, $yStart + 2);
+    $pdf->SetTextColor(154, 52, 18); // dark orange-red
+    $pdf->SetFont($fontFamily, 'B', 24);
+    $pdf->Cell(0, 12, 'Shree Datta Capital', 0, 1, 'L');
+    $pdf->SetX(60);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFont($fontFamily, '', 16);
+    $pdf->Cell(0, 10, ucfirst($drawCategory) . ' Draw Agreement', 0, 1, 'L');
+    // Move below the tallest of logo/title and draw bottom line
+    $titleBottomY = $pdf->GetY();
+    $afterHeaderY = max($imgBottom, $titleBottomY) + 2;
+    $pdf->SetY($afterHeaderY);
+    $pdf->Line(15, $afterHeaderY, 195, $afterHeaderY); // bottom line
     $pdf->Ln(4);
 
-    // Details
-    $pdf->SetFont('helvetica', '', 12);
-    $tokStr = implode(', ', $tokens);
-    $htmlDetails = '<b>Name:</b> ' . htmlspecialchars($first . ' ' . $last) . '<br/>' .
-                   '<b>Token number(s):</b> ' . htmlspecialchars($tokStr) . '<br/>' .
-                   '<b>Draw Name:</b> ' . htmlspecialchars($drawName) . '<br/>' .
-                   '<b>Draw Category:</b> ' . htmlspecialchars(ucfirst($drawCategory)) . '<br/>' .
-                   '<b>Submitted at:</b> ' . htmlspecialchars($now);
-    $pdf->writeHTML($htmlDetails, true, false, true, false, '');
+    // Place live camera photo on the right of the details block (passport-style)
+    // Use in-memory image data via '@' prefix supported by TCPDF
+    $photoX = 150; $photoY = $pdf->GetY() + 2; $photoW = 35; // larger live photo (~35mm width)
+    try { $pdf->Image('@' . $camImage, $photoX, $photoY, $photoW, 0, '', '', '', true); } catch (Exception $e) {}
 
-    // Agreement text (if provided)
+    // Details block on left
+    $pdf->SetFont($fontFamily, '', 12);
+    $tokStr = implode(', ', $tokens);
+    $htmlDetails = ''
+      . '<b>Name :</b> ' . htmlspecialchars($first . ' ' . $last) . '<br/>'
+      . '<b>Token number(s):</b> ' . htmlspecialchars($tokStr) . '<br/>'
+      . '<b>Draw Name:</b> ' . htmlspecialchars($drawName) . '<br/>'
+      . '<b>Draw Catogary:</b> ' . htmlspecialchars(ucfirst($drawCategory)) . '<br/>';
+    $pdf->writeHTMLCell(130, '', 15, $photoY, $htmlDetails, 0, 1, false, true, 'L', true);
+
+    // Agreement text (if provided) - render exactly as provided with preserved line breaks
     if ($agreementText !== '') {
-      $pdf->Ln(3);
-      $pdf->SetFont('helvetica', '', 11);
-      $pdf->writeHTML('<b>Agreement:</b><br/>' . nl2br(htmlspecialchars($agreementText)), true, false, true, false, '');
+      $pdf->Ln(2);
+      $pdf->SetFont($fontFamily, '', 12);
+      // If the agreement contains HTML tags, render as-is; else preserve newlines
+      if (preg_match('/<\w|<\//', $agreementText)) {
+        $agreementHtml = $agreementText;
+      } else {
+        $agreementHtml = nl2br($agreementText);
+      }
+      $pdf->writeHTMLCell(0, 0, '', '', $agreementHtml, 0, 1, false, true, 'L', true);
     }
 
     // Footer note
-    $pdf->Ln(10);
-    $pdf->SetFont('helvetica', 'I', 10);
+    $pdf->Ln(6);
+    $pdf->SetFont($fontFamily, 'I', 10);
     $pdf->Cell(0, 6, 'This is a system-generated document.', 0, 1, 'C');
 
-    // Save to filesystem
+    // Save to filesystem (suppress TCPDF direct output to avoid corrupting JSON)
+    ob_start();
     $pdf->Output($pdfFsPath, 'F');
+    $tcpdfOut = ob_get_clean();
+    if (!empty($tcpdfOut)) { $pdfDebug['tcpdf_output'] = trim($tcpdfOut); }
     if (file_exists($pdfFsPath)) { $pdfDebug['saved'] = true; }
   }
 } catch (Throwable $e) {
