@@ -578,8 +578,16 @@
       const prevText = btn.textContent;
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('../../api/register.php?debug=1', { method: 'POST', body: fd });
-        const data = await res.json().catch(() => ({}));
+        const res = await fetch('/shreedatta-capital-web/asset/forms/api/register.php?debug=1&v=' + Date.now(), { method: 'POST', body: fd });
+        const responseText = await res.text();
+        console.log('Response status:', res.status, 'Response text:', responseText);
+        let data = {};
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('JSON parse error:', e, 'Raw response:', responseText);
+          throw new Error('Invalid server response: ' + responseText.substring(0, 100));
+        }
         if (!res.ok || !data.ok) {
           throw new Error(data && data.error ? data.error : 'Server error');
         }
