@@ -146,9 +146,20 @@ $pdfDebug = [
 ];
 try {
   $tcpdfPath = __DIR__ . '/tcpdf/tcpdf.php';
+  $fpdiPath = __DIR__ . '/FPDI-2.3.7/src/autoload.php';
+  
   if (file_exists($tcpdfPath)) {
     $pdfDebug['tcpdf_found'] = true;
     require_once $tcpdfPath;
+    
+    // Load FPDI for PDF template support
+    if (file_exists($fpdiPath)) {
+      require_once $fpdiPath;
+      $pdfDebug['fpdi_found'] = true;
+    } else {
+      $pdfDebug['fpdi_found'] = false;
+      $pdfDebug['fpdi_error'] = 'FPDI not found at: ' . $fpdiPath;
+    }
     // Ensure pdf directory exists
     $pdfDir = __DIR__ . '/../pdfFiles'; // -> asset/forms/pdfFiles
     if (!is_dir($pdfDir)) {
@@ -183,15 +194,38 @@ try {
     $pdfUrl = $scheme . '://' . $host . $webPath;
     $pdfDebug['web_path'] = $webPath;
 
-    // Create PDF (A4 portrait)
-    $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+    // Select template based on language
+    $templateFile = '';
+    switch ($lang) {
+      case 'hi':
+        $templateFile = __DIR__ . '/../../images/hindi.pdf';
+        break;
+      case 'mr':
+        $templateFile = __DIR__ . '/../../images/marathi.pdf';
+        break;
+      default:
+        $templateFile = __DIR__ . '/../../images/english.pdf';
+        break;
+    }
+    
+    // Check if template exists and FPDI is available - REQUIRED for template-only approach
+    if (!isset($pdfDebug['fpdi_found']) || !$pdfDebug['fpdi_found']) {
+      throw new Exception('FPDI library not found - required for template-based PDF generation');
+    }
+    if (!file_exists($templateFile)) {
+      throw new Exception('Template file not found: ' . $templateFile);
+    }
+    
+    $pdfDebug['template_used'] = basename($templateFile);
+
+    // Create PDF using ONLY template-based approach with FPDI + TCPDF
+    $pdf = new setasign\Fpdi\Tcpdf\Fpdi('P', 'mm', 'A4', true, 'UTF-8', false);
     $pdf->SetCreator(PDF_CREATOR);
     $pdf->SetAuthor('Shree Datta Capital');
     $pdf->SetTitle(ucfirst($drawCategory) . ' Draw Agreement');
-    $pdf->SetMargins(15, 15, 15);
-    $pdf->SetAutoPageBreak(true, 18);
-    $pdf->setFontSubsetting(true); // better Unicode rendering for Hindi/Marathi
-    // Hint TCPDF about language and charset
+    $pdf->setFontSubsetting(true);
+    
+    // Set language
     $pdfLang = $lang === 'hi' ? 'hi' : ($lang === 'mr' ? 'mr' : 'en');
     $l = [
       'a_meta_charset' => 'UTF-8',
@@ -199,10 +233,17 @@ try {
       'w_page' => 'page'
     ];
     $pdf->setLanguageArray($l);
+    
+    // Import template
+    $pageCount = $pdf->setSourceFile($templateFile);
+    $templateId = $pdf->importPage(1);
     $pdf->AddPage();
-
-    // Header area (single line below header only)
-    // No top line – keep clean header like sample
+    $pdf->useTemplate($templateId);
+    $pdfDebug['template_import_success'] = true;
+    
+    // Disable margins and auto page break for precise positioning
+    $pdf->SetMargins(0, 0, 0);
+    $pdf->SetAutoPageBreak(false);
 
     // Resolve a font that supports Devanagari (Hindi/Marathi)
     $fontFamily = 'dejavusans'; // Default to DejaVu Sans which has better Unicode support
@@ -232,106 +273,230 @@ try {
       }
     }
 
-    // Header with logo (left) and big red title similar to sample
-    $yStart = $pdf->GetY();
-    $logoPath = __DIR__ . '/../../images/Logo.png'; // asset/images/Logo.png
-    $imgBottom = $yStart;
-    if (file_exists($logoPath)) {
-      // Draw logo with increased size (35mm height) and positioned closer to text
-      try {
-        $pdf->Image($logoPath, 20, $yStart, 0, 45, '', '', '', true); // Increased left margin to 40 and height to 45
-        if (method_exists($pdf, 'getImageRBY')) { $imgBottom = max($imgBottom, $pdf->getImageRBY()); }
-      } catch (Exception $e) {}
-    }
-    // Title next to logo - positioned with more left margin
-    $pdf->SetXY(60, $yStart + 8);
-    $pdf->SetTextColor(154, 52, 18); // dark orange-red
-    $pdf->SetFont($fontFamily, 'B', 38);
-    $pdf->Cell(0, 14, 'Shree Datta Capital', 0, 1, 'L');
-    $pdf->SetX(60);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont($fontFamily, '', 26);
-    $pdf->Cell(0, 12, ucfirst($drawCategory) . ' Draw Agreement', 0, 1, 'L');
-    // Move below the tallest of logo/title and draw bottom line
-    $titleBottomY = $pdf->GetY();
-    $afterHeaderY = max($imgBottom, $titleBottomY) + 2;
-    $pdf->SetY($afterHeaderY);
-    $pdf->Line(15, $afterHeaderY, 195, $afterHeaderY); // bottom line
-    $pdf->Ln(4);
-
-    // Place live camera photo on the right of the details block (passport-style)
-    // Use in-memory image data via '@' prefix supported by TCPDF
-    $photoX = 150; $photoY = $pdf->GetY() + 2; $photoW = 40; $photoH = 40; // increased height to 50mm
-    try { $pdf->Image('@' . $camImage, $photoX, $photoY, $photoW, $photoH, '', '', '', true); } catch (Exception $e) {}
-
-    // Details block on left
-    $pdf->SetFont($fontFamily, '', 13);
+    // Prepare user data
     $tokStr = implode(', ', $tokens);
-    
-    // Ensure proper encoding for all text fields
     $fullName = trim($first . ' ' . $last);
+    
+    // Ensure proper UTF-8 encoding
     if (!mb_check_encoding($fullName, 'UTF-8')) {
       $fullName = mb_convert_encoding($fullName, 'UTF-8', 'auto');
     }
     if (!mb_check_encoding($drawName, 'UTF-8')) {
       $drawName = mb_convert_encoding($drawName, 'UTF-8', 'auto');
     }
-    
-    $htmlDetails = ''
-      . '<b>Name :</b> ' . htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') . '<br/><br/>'
-      . '<b>Token number(s):</b> ' . htmlspecialchars($tokStr, ENT_QUOTES, 'UTF-8') . '<br/><br/>'
-      . '<b>Draw Name:</b> ' . htmlspecialchars($drawName, ENT_QUOTES, 'UTF-8') . '<br/><br/>'
-      . '<b>Draw Category:</b> ' . htmlspecialchars(ucfirst($drawCategory), ENT_QUOTES, 'UTF-8') . ' Draw<br/>';
-    $pdf->writeHTMLCell(130, '', 15, $photoY, $htmlDetails, 0, 1, false, true, 'L', true);
 
-    // Agreement text (if provided) - render exactly as provided with preserved line breaks
-    if ($agreementText !== '') {
-      $pdf->Ln(15); // Increased top margin to move agreement closer to green tick
-      
-      // Ensure proper font for the agreement text
-      $pdf->SetFont($fontFamily, '', 12);
-      
-      // Clean and prepare the agreement text
-      $agreementHtml = $agreementText;
-      
-      // If the agreement doesn't contain HTML tags, preserve newlines
-      if (!preg_match('/<\w|<\//', $agreementHtml)) {
-        $agreementHtml = nl2br($agreementHtml);
-      }
-      
-      // Ensure proper UTF-8 encoding
-      if (!mb_check_encoding($agreementHtml, 'UTF-8')) {
-        $agreementHtml = mb_convert_encoding($agreementHtml, 'UTF-8', 'auto');
-      }
-      
-      // For Hindi/Marathi, we might need to set text direction
-      if ($needsDevanagari) {
-        $pdf->setRTL(false); // Devanagari is LTR
-      }
-      
-      $pdf->writeHTMLCell(0, 0, '', '', $agreementHtml, 0, 1, false, true, 'L', true);
+    // Template-based approach: ONLY add user-specific data to existing template
+    // The template already contains: header, logo, labels, terms & conditions
+    
+    // Set font for user data
+    $pdf->SetFont($fontFamily, '', 12);
+    $pdf->SetTextColor(0, 0, 0);
+    
+    // 1. Add document title (if not in template) - positioned below the main header
+    $pdf->SetXY(60, 40); // Position for document title
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFont($fontFamily, '', 26);
+    $documentTitle = ucfirst($drawCategory) . ' Draw Agreement';
+    $pdf->Cell(0, 12, $documentTitle, 0, 1, 'L');
+    
+    // 2. Create user details section with DYNAMIC labels and positioning (NON-TEMPLATE)
+    
+    // Cover the template's existing form fields area with white rectangle (but preserve photo area)
+    $pdf->SetFillColor(255, 255, 255); // White
+    $pdf->Rect(15, 65, 130, 60, 'F'); // Cover existing form area in template (width reduced to 130 to avoid photo area)
+    
+    // 3. Add user photo (positioned in the blank space on right side) - AFTER covering template
+    $photoX = 150; // Adjust based on template blank space
+    $photoY = 65;  // Adjust based on template blank space
+    $photoW = 35;  // Photo width
+    $photoH = 35;  // Photo height
+    
+    try { 
+      $pdf->Image('@' . $camImage, $photoX, $photoY, $photoW, $photoH, '', '', '', true); 
+    } catch (Exception $e) {
+      $pdfDebug['photo_error'] = $e->getMessage();
     }
-
-    // Footer with green tick and user name at bottom right
-    $pdf->Ln(6);
     
-    // Position green tick at bottom right
+    // Starting positions for the form fields
+    $currentY = 68; // Starting Y position for first field
+    $lineHeight = 7; // Height between lines
+    $maxWidth = 110; // Maximum width before wrapping (leave space for photo)
+    $labelX = 20; // X position for labels
+    $valueX = 65; // X position for values (after labels)
+    
+    // Set fonts
+    $labelFont = $fontFamily;
+    $valueFont = $fontFamily;
+    
+    // 1. NAME FIELD with label
+    $pdf->SetFont($labelFont, 'B', 12);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetXY($labelX, $currentY);
+    $pdf->Cell(0, 6, 'Name :', 0, 0, 'L');
+    
+    // Name value
+    $pdf->SetFont($valueFont, '', 12);
+    $pdf->SetXY($valueX, $currentY);
+    $nameWidth = $pdf->GetStringWidth($fullName);
+    
+    if ($nameWidth > $maxWidth) {
+      // Name is too long, use multi-line
+      $pdf->writeHTMLCell($maxWidth, 0, $valueX, $currentY, $fullName, 0, 1, false, true, 'L', true);
+      $currentY += ceil($nameWidth / $maxWidth) * 8; // Adjust Y for next field
+    } else {
+      // Name fits on one line
+      $pdf->Cell(0, 6, $fullName, 0, 0, 'L');
+      $currentY += $lineHeight;
+    }
+    
+    // 2. TOKEN NUMBERS FIELD with label (most critical for dynamic sizing)
+    $pdf->SetFont($labelFont, 'B', 12);
+    $pdf->SetXY($labelX, $currentY);
+    $pdf->Cell(0, 6, 'Token number(s):', 0, 0, 'L');
+    
+    // Token values with optimized multi-line layout
+    $pdf->SetFont($valueFont, '', 12);
+    
+    // Calculate token layout parameters
+    $tokenWidth = 9; // Approximate width per 2-digit token (without comma/space)
+    $separatorWidth = 1; // Width for comma
+    $totalTokenWidth = $tokenWidth + $separatorWidth; // ~10mm per token including separator
+    
+    // First row: starts after label (X=70), can fit tokens until maxWidth (120mm from X=70)
+    $firstRowStartX = $valueX; // X=70
+    $firstRowMaxWidth = $maxWidth; // 120mm available width
+    $firstRowTokens = floor($firstRowMaxWidth / $totalTokenWidth); // ~12-13 tokens
+    
+    // Subsequent rows: start from label position (X=20), extend to where first row ended
+    $subsequentRowStartX = $labelX; // X=20 (same as label)
+    $subsequentRowMaxWidth = $firstRowMaxWidth + ($valueX - $labelX); // 120 + (70-20) = 170mm
+    $subsequentRowTokens = floor($subsequentRowMaxWidth / $totalTokenWidth); // ~17 tokens
+    
+    if (count($tokens) <= $firstRowTokens) {
+      // All tokens fit on first row
+      $pdf->SetXY($firstRowStartX, $currentY);
+      $pdf->Cell(0, 6, $tokStr, 0, 0, 'L');
+      $currentY += $lineHeight;
+    } else {
+      // Multi-line approach needed
+      $tokenChunks = [];
+      $remainingTokens = $tokens;
+      
+      // First chunk: up to 13 tokens for first row
+      $firstChunk = array_splice($remainingTokens, 0, $firstRowTokens);
+      $tokenChunks[] = ['tokens' => $firstChunk, 'startX' => $firstRowStartX];
+      
+      // Subsequent chunks: up to 17 tokens per row, starting from X=20
+      while (!empty($remainingTokens)) {
+        $chunk = array_splice($remainingTokens, 0, $subsequentRowTokens);
+        $tokenChunks[] = ['tokens' => $chunk, 'startX' => $subsequentRowStartX];
+      }
+      
+      // Render each chunk
+      foreach ($tokenChunks as $chunkIndex => $chunkData) {
+        $chunkStr = implode(', ', $chunkData['tokens']);
+        $pdf->SetXY($chunkData['startX'], $currentY + ($chunkIndex * 7));
+        $pdf->Cell(0, 6, $chunkStr, 0, 0, 'L');
+      }
+      
+      // Adjust Y position for next field
+      $currentY += (count($tokenChunks) * 7);
+    }
+    
+    // 3. DRAW NAME FIELD with label
+    $pdf->SetFont($labelFont, 'B', 12);
+    $pdf->SetXY($labelX, $currentY);
+    $pdf->Cell(0, 6, 'Draw Name:', 0, 0, 'L');
+    
+    // Draw name value
+    $pdf->SetFont($valueFont, '', 12);
+    $pdf->SetXY($valueX, $currentY);
+    $drawNameWidth = $pdf->GetStringWidth($drawName);
+    
+    if ($drawNameWidth > $maxWidth) {
+      // Draw name is too long, use multi-line
+      $pdf->writeHTMLCell($maxWidth, 0, $valueX, $currentY, $drawName, 0, 1, false, true, 'L', true);
+      $currentY += ceil($drawNameWidth / $maxWidth) * 8;
+    } else {
+      // Draw name fits on one line
+      $pdf->Cell(0, 6, $drawName, 0, 0, 'L');
+      $currentY += $lineHeight;
+    }
+    
+    // 4. DRAW CATEGORY FIELD with label
+    $drawCategoryText = ucfirst($drawCategory) . ' Draw';
+    $pdf->SetFont($labelFont, 'B', 12);
+    $pdf->SetXY($labelX, $currentY);
+    $pdf->Cell(0, 6, 'Draw Category:', 0, 0, 'L');
+    
+    // Draw category value
+    $pdf->SetFont($valueFont, '', 12);
+    $pdf->SetXY($valueX, $currentY);
+    $categoryWidth = $pdf->GetStringWidth($drawCategoryText);
+    
+    if ($categoryWidth > $maxWidth) {
+      // Category is too long, use multi-line
+      $pdf->writeHTMLCell($maxWidth, 0, $valueX, $currentY, $drawCategoryText, 0, 1, false, true, 'L', true);
+      $currentY += ceil($categoryWidth / $maxWidth) * 8;
+    } else {
+      // Category fits on one line
+      $pdf->Cell(0, 6, $drawCategoryText, 0, 0, 'L');
+      $currentY += $lineHeight;
+    }
+    
+    // Store the final Y position for potential use in agreement positioning
+    $finalFieldY = $currentY + 10; // Add some padding after fields
+    
+    // 4. Add user name in the agreement underscore area (point 8) with DYNAMIC positioning
+    $pdf->SetFont($fontFamily, 'B', 12);
+    
+    // Calculate dynamic agreement position based on where fields ended
+    $minAgreementY = 220; // Minimum Y position for agreement (from template)
+    $dynamicAgreementY = max($minAgreementY, $finalFieldY + 20); // At least 20mm below last field
+    
+    // Position where the underscore appears in the agreement text
+    $agreementNameX = 26; // X position of underscore in template
+    $agreementNameY = $dynamicAgreementY; // Dynamic Y position based on content
+    
+    $pdf->SetXY($agreementNameX, $agreementNameY);
+    
+    // Add the name with proper comma formatting
+    // Template should read: "8) I, [NAME], have read all the above terms..."
+    $nameWithComma = $fullName . ',';
+    $nameWidth = $pdf->GetStringWidth($nameWithComma);
+    
+    // Draw the name with comma to ensure proper punctuation
+    $pdf->Cell($nameWidth, 6, $nameWithComma, 0, 0, 'L');
+    
+    // Store debug info about dynamic positioning
+    $pdfDebug['dynamic_positioning'] = [
+      'final_field_y' => $finalFieldY,
+      'min_agreement_y' => $minAgreementY,
+      'actual_agreement_y' => $dynamicAgreementY,
+      'token_count' => count($tokens),
+      'tokens_width' => $pdf->GetStringWidth($tokStr)
+    ];
+    
+    // 5. Add green tick and user name at bottom right (if not in template)
     $greenTickPath = __DIR__ . '/../../images/greentick.png';
     $pageHeight = $pdf->getPageHeight();
-    $bottomMargin = 25; // 25mm from bottom
-    $rightMargin = 25;  // 25mm from right
-    $tickSize = 15;     // 15mm size for green tick
+    $bottomMargin = 25;
+    $rightMargin = 25;
+    $tickSize = 15;
     
     $tickX = $pdf->getPageWidth() - $rightMargin - $tickSize;
     $tickY = $pageHeight - $bottomMargin - $tickSize;
     
+    // Add green tick
     if (file_exists($greenTickPath)) {
       try {
         $pdf->Image($greenTickPath, $tickX, $tickY, $tickSize, $tickSize, '', '', '', true);
-      } catch (Exception $e) {}
+      } catch (Exception $e) {
+        $pdfDebug['tick_error'] = $e->getMessage();
+      }
     }
     
-    // User name below the green tick
+    // Add user name below green tick
     $pdf->SetXY($tickX - 10, $tickY + $tickSize + 2);
     $pdf->SetFont($fontFamily, 'B', 10);
     $pdf->SetTextColor(0, 0, 0);
@@ -342,7 +507,9 @@ try {
       $userName = mb_convert_encoding($userName, 'UTF-8', 'auto');
     }
     
-    $pdf->Cell($tickSize + 20, 5, $userName, 0, 1, 'C');
+    $pdf->Cell(40, 5, $userName, 0, 1, 'C');
+
+
 
     // Add second page for Aadhaar images
     $pdf->AddPage();
@@ -372,25 +539,36 @@ try {
     $imageX = ($pageWidth - $imageWidth) / 2;
     
     // Position for front image (top)
-    $frontY = $pdf->GetY();
-    
-    // Position for back image (below front image)
-    $backY = $frontY + $imageHeight + $imageGap + 15; // 15mm for label space
+    $frontY = $pdf->GetY()+20;
     
     // Display Aadhaar Front image
-    
     try {
       // Add image with auto-fit and maintain aspect ratio
       $pdf->Image('@' . $aadFrontData, $imageX, $frontY, $imageWidth, 0, '', '', '', true, 300, '', false, false, 0, 'CM', false, false);
+      // Get actual height of the rendered front image
+      $actualFrontHeight = $pdf->getImageRBY() - $frontY;
     } catch (Exception $e) {
       // If image fails, show placeholder
       $pdf->Rect($imageX, $frontY, $imageWidth, $imageHeight);
       $pdf->SetXY($imageX, $frontY + ($imageHeight/2));
       $pdf->Cell($imageWidth, 8, 'Aadhaar Front Image', 0, 0, 'C');
+      $actualFrontHeight = $imageHeight;
+    }
+    
+    // Calculate position for back image
+    $backY = $frontY + $actualFrontHeight + $imageGap + 20;
+    
+    // Check if back image will fit on current page
+    $remainingPageHeight = $pageHeight - $backY - $margin;
+    $estimatedBackHeight = $imageHeight; // Use estimated height for safety
+    
+    // If back image won't fit, move to next page
+    if ($remainingPageHeight < $estimatedBackHeight) {
+      $pdf->AddPage();
+      $backY = $pdf->GetY() + 20; // Start from top of new page with margin
     }
     
     // Display Aadhaar Back image
-    
     try {
       // Add image with auto-fit and maintain aspect ratio
       $pdf->Image('@' . $aadBackData, $imageX, $backY, $imageWidth, 0, '', '', '', true, 300, '', false, false, 0, 'CM', false, false);
