@@ -194,19 +194,12 @@ try {
     $pdfUrl = $scheme . '://' . $host . $webPath;
     $pdfDebug['web_path'] = $webPath;
 
-    // Select template based on language
-    $templateFile = '';
-    switch ($lang) {
-      case 'hi':
-        $templateFile = __DIR__ . '/../../images/hindi.pdf';
-        break;
-      case 'mr':
-        $templateFile = __DIR__ . '/../../images/marathi.pdf';
-        break;
-      default:
-        $templateFile = __DIR__ . '/../../images/english.pdf';
-        break;
-    }
+    // Select template based on language and category (gold uses "<lang> gold.pdf", others use normal)
+    $imagesDir = __DIR__ . '/../../images/';
+    $langKey = ($lang === 'hi') ? 'hindi' : (($lang === 'mr') ? 'marathi' : 'english');
+    $isGold = (strtolower((string)$drawCategory) === 'gold');
+    $templateBaseName = $langKey . ($isGold ? ' gold' : '') . '.pdf';
+    $templateFile = $imagesDir . $templateBaseName;
     
     // Check if template exists and FPDI is available - REQUIRED for template-only approach
     if (!isset($pdfDebug['fpdi_found']) || !$pdfDebug['fpdi_found']) {
@@ -222,7 +215,7 @@ try {
     $pdf = new setasign\Fpdi\Tcpdf\Fpdi('P', 'mm', 'A4', true, 'UTF-8', false);
     $pdf->SetCreator(PDF_CREATOR);
     $pdf->SetAuthor('Shree Datta Capital');
-    $pdf->SetTitle(ucfirst($drawCategory) . ' Draw Agreement');
+    //$pdf->SetTitle(ucfirst($drawCategory) . ' Draw Agreement');
     $pdf->setFontSubsetting(true);
     
     // Set language
@@ -293,21 +286,31 @@ try {
     $pdf->SetTextColor(0, 0, 0);
     
     // 1. Add document title (if not in template) - positioned below the main header
-    $pdf->SetXY(60, 40); // Position for document title
+    $pdf->SetXY(73, 18); // Position for document title
     $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont($fontFamily, '', 26);
+    // Use a constant Latin font for the English title across all templates
+    $prevFontFamily = $fontFamily; // remember current font for body text
+    $pdf->SetFont('helvetica', 'B', 16);
     $documentTitle = ucfirst($drawCategory) . ' Draw Agreement';
     $pdf->Cell(0, 12, $documentTitle, 0, 1, 'L');
+    // Restore previous font for the rest of the content
+    $pdf->SetFont($prevFontFamily, '', 12);
     
     // 2. Create user details section with DYNAMIC labels and positioning (NON-TEMPLATE)
-    
+    // Set transparency (0 = fully transparent, 1 = fully opaque)
+$pdf->SetAlpha(0); // completely transparent
+
+// Now draw with "fill" turned on
+$pdf->SetFillColor(255, 255, 255); // White
+$pdf->Rect(5, 53, 130, 60, 'F');
+$pdf->SetAlpha(1);
+// Reset alpha back to normal for next content
     // Cover the template's existing form fields area with white rectangle (but preserve photo area)
-    $pdf->SetFillColor(255, 255, 255); // White
-    $pdf->Rect(15, 65, 130, 60, 'F'); // Cover existing form area in template (width reduced to 130 to avoid photo area)
+     // Cover existing form area in template (width reduced to 130 to avoid photo area)
     
     // 3. Add user photo (positioned in the blank space on right side) - AFTER covering template
-    $photoX = 150; // Adjust based on template blank space
-    $photoY = 65;  // Adjust based on template blank space
+    $photoX = 160; // Adjust based on template blank space
+    $photoY = 53;  // Adjust based on template blank space
     $photoW = 35;  // Photo width
     $photoH = 35;  // Photo height
     
@@ -318,10 +321,10 @@ try {
     }
     
     // Starting positions for the form fields
-    $currentY = 68; // Starting Y position for first field
+    $currentY = 53; // Starting Y position for first field
     $lineHeight = 7; // Height between lines
     $maxWidth = 110; // Maximum width before wrapping (leave space for photo)
-    $labelX = 20; // X position for labels
+    $labelX = 15; // X position for labels
     $valueX = 65; // X position for values (after labels)
     
     // Set fonts
@@ -443,7 +446,7 @@ try {
       $pdf->Cell(0, 6, $drawCategoryText, 0, 0, 'L');
       $currentY += $lineHeight;
     }
-    
+   
     // Store the final Y position for potential use in agreement positioning
     $finalFieldY = $currentY + 10; // Add some padding after fields
     
@@ -451,7 +454,14 @@ try {
     $pdf->SetFont($fontFamily, 'B', 12);
     
     // Calculate dynamic agreement position based on where fields ended
-    $minAgreementY = 220; // Minimum Y position for agreement (from template)
+    // Allow per-language control of the minimum Y while keeping English at 233
+    $agreementYOverrides = [
+      'en' => 233, // keep as-is for English templates
+      'hi' => 214.5, // adjust this value for Hindi templates if needed
+      'mr' => 221, // adjust this value for Marathi templates if needed
+    ];
+    $langKeyShort = ($lang === 'hi') ? 'hi' : (($lang === 'mr') ? 'mr' : 'en');
+    $minAgreementY = (int)($agreementYOverrides[$langKeyShort] ?? 233); // Minimum Y position for agreement (from template)
     $dynamicAgreementY = max($minAgreementY, $finalFieldY + 20); // At least 20mm below last field
     
     // Position where the underscore appears in the agreement text
@@ -500,7 +510,7 @@ try {
     $pdf->SetXY($tickX - 10, $tickY + $tickSize + 2);
     $pdf->SetFont($fontFamily, 'B', 10);
     $pdf->SetTextColor(0, 0, 0);
-    $userName = trim($first . ' ' . $last);
+    $userName = trim('Name: '.$first . ' ' . $last);
     
     // Ensure proper UTF-8 encoding for user name
     if (!mb_check_encoding($userName, 'UTF-8')) {
