@@ -6,41 +6,51 @@
 //   if (!$conn) { die('DB connection failed'); }
 
 $DB_HOST = 'localhost';
-$DB_USER = 'root';
-$DB_PASS = '';
-$DB_NAME = 'shreedatta';
+$DB_USER = 'u497309930_shreedatta_cap';
+$DB_PASS = '#L7rPX9Tsd';
+$DB_NAME = 'u497309930_shreedatta';
+// Optional: change if your provider uses a non-standard port
+$DB_PORT = 3306;
 
 $DEBUG_DB = isset($_GET['debug']) && ($_GET['debug'] === '1' || strtolower($_GET['debug']) === 'true');
 
 // Create connection with intelligent fallbacks
 mysqli_report(MYSQLI_REPORT_OFF);
 
-function try_connect($host, $user, $pass, $db) {
-    $m = new mysqli($host, $user, $pass, $db);
+function try_connect($host, $user, $pass, $db, $port = 3306) {
+    $m = new mysqli($host, $user, $pass, $db, $port);
     return $m;
 }
 
 $attempts = [];
 
 // Attempt 1: given host + given pass
-$conn = try_connect($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+$conn = try_connect($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME, $DB_PORT);
 if ($conn->connect_errno) {
-    $attempts[] = ['host' => $DB_HOST, 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
-    // Attempt 2: 127.0.0.1 + given pass (fix socket issues)
-    $conn->close();
-    $conn = try_connect('localhost', $DB_USER, $DB_PASS, $DB_NAME);
+    $attempts[] = ['host' => $DB_HOST, 'port' => $DB_PORT, 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
+    // Attempt 2: Only if host is local, try 127.0.0.1 to switch from socket to TCP
+    $isLocalHost = in_array($DB_HOST, ['localhost', '127.0.0.1'], true);
+    if ($isLocalHost) {
+        if (@$conn->thread_id) { $conn->close(); }
+        $conn = try_connect('127.0.0.1', $DB_USER, $DB_PASS, $DB_NAME, $DB_PORT);
+    }
 }
 
 if ($conn->connect_errno) {
-    $attempts[] = ['host' => 'localhost', 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
+    // Record the second attempt only if we made it (i.e., local host case)
+    if (isset($isLocalHost) && $isLocalHost) {
+        $attempts[] = ['host' => '127.0.0.1', 'port' => $DB_PORT, 'user' => $DB_USER, 'pass_used' => ($DB_PASS !== '' ? 'set' : 'empty'), 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
+    }
     // Attempt 3/4: if user is root, try empty password on both hosts (common XAMPP default)
     if ($DB_USER === 'root' && $DB_PASS !== '') {
-        $conn->close();
-        $conn = try_connect($DB_HOST, $DB_USER, '', $DB_NAME);
+        if (@$conn->thread_id) { $conn->close(); }
+        $conn = try_connect($DB_HOST, $DB_USER, '', $DB_NAME, $DB_PORT);
         if ($conn->connect_errno) {
-            $attempts[] = ['host' => $DB_HOST, 'user' => $DB_USER, 'pass_used' => 'empty', 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
-            $conn->close();
-            $conn = try_connect('localhost', $DB_USER, '', $DB_NAME);
+            $attempts[] = ['host' => $DB_HOST, 'port' => $DB_PORT, 'user' => $DB_USER, 'pass_used' => 'empty', 'errno' => $conn->connect_errno, 'error' => $conn->connect_error];
+            if (@$conn->thread_id) { $conn->close(); }
+            if (isset($isLocalHost) && $isLocalHost) {
+                $conn = try_connect('127.0.0.1', $DB_USER, '', $DB_NAME, $DB_PORT);
+            }
         }
     }
 }
@@ -56,6 +66,8 @@ if ($conn->connect_errno) {
             'debug' => [
                 'attempts' => $attempts,
                 'db' => $DB_NAME,
+                'host' => $DB_HOST,
+                'port' => $DB_PORT,
             ],
         ]);
     } else {

@@ -84,9 +84,9 @@ if ($errF) fail('Aadhaar front: ' . $errF, 400);
 list($aadBackData, $aadBackType, $errB) = read_uploaded_image($_FILES['aadBack'] ?? null);
 if ($errB) fail('Aadhaar back: ' . $errB, 400);
 
-// Insert into userTable
+// Insert into usertable
 $now = date('Y-m-d H:i:s');
-$sqlUser = 'INSERT INTO userTable (FirstName, LastName, drawName, drawCategory, language, agreement, dateAndTime) VALUES (?,?,?,?,?,?,?)';
+$sqlUser = 'INSERT INTO usertable (FirstName, LastName, drawName, drawCategory, language, agreement, dateAndTime) VALUES (?,?,?,?,?,?,?)';
 $stmt = $conn->prepare($sqlUser);
 if (!$stmt) fail('DB prepare failed (user)', 500);
 $stmt->bind_param('sssssss', $first, $last, $drawName, $drawCategory, $lang, $agreementText, $now);
@@ -94,8 +94,8 @@ if (!$stmt->execute()) fail('DB execute failed (user)', 500, ['debug' => $debug 
 $userId = $stmt->insert_id;
 $stmt->close();
 
-// Insert attachments (photo, aadFront, aadBack) into AttachDoc
-$sqlDoc = 'INSERT INTO AttachDoc (image, imageType, userID) VALUES (?,?,?)';
+// Insert attachments (photo, aadFront, aadBack) into attachdoc
+$sqlDoc = 'INSERT INTO attachdoc (image, imageType, userID) VALUES (?,?,?)';
 $stmtDoc = $conn->prepare($sqlDoc);
 if (!$stmtDoc) fail('DB prepare failed (doc)', 500);
 $stmtDoc->bind_param('bsi', $null, $type, $uid);
@@ -121,7 +121,7 @@ foreach ($docs as [$blob, $typeVal]) {
 $stmtDoc->close();
 
 // Insert tokens
-$sqlTok = 'INSERT INTO TokenTable (tokenNumber, userID) VALUES (?,?)';
+$sqlTok = 'INSERT INTO tokentable (tokenNumber, userID) VALUES (?,?)';
 $stmtTok = $conn->prepare($sqlTok);
 if (!$stmtTok) fail('DB prepare failed (token)', 500);
 foreach ($tokens as $tok) {
@@ -161,7 +161,9 @@ try {
       $pdfDebug['fpdi_error'] = 'FPDI not found at: ' . $fpdiPath;
     }
     // Ensure pdf directory exists
-    $pdfDir = __DIR__ . '/../pdfFiles'; // -> asset/forms/pdfFiles
+    // Store PDFs in main project directory under 'pdffiles' (beside 'asset')
+    $projectRoot = dirname(__DIR__, 3); // from asset/forms/api -> project root
+    $pdfDir = $projectRoot . '/pdffiles'; // -> <project-root>/pdffiles
     if (!is_dir($pdfDir)) {
       $mk = @mkdir($pdfDir, 0775, true);
       if (!$mk) { $pdfDebug['mkdir_error'] = 'Failed to create directory'; }
@@ -185,12 +187,10 @@ try {
     $pdfDebug['file_name'] = $fileName;
     $pdfDebug['fs_path'] = $pdfFsPath;
 
-    // Build absolute URL for response (derive correct web base path)
+    // Build absolute URL for response using site-root path to avoid project folder prefixes
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $scriptDirWeb = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/'); // e.g. /shreedatta-capital-web/asset/forms/api
-    $formsDirWeb = rtrim(dirname($scriptDirWeb), '/'); // -> /shreedatta-capital-web/asset/forms
-    $webPath = $formsDirWeb . '/pdfFiles/' . $fileName; // -> /shreedatta-capital-web/asset/forms/pdfFiles/<file>
+    $webPath = '/pdffiles/' . $fileName; // site-root path on server (beside 'asset')
     $pdfUrl = $scheme . '://' . $host . $webPath;
     $pdfDebug['web_path'] = $webPath;
 

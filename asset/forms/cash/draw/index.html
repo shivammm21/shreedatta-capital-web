@@ -546,7 +546,7 @@
       const prevText = btn.textContent;
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('/shreedatta-capital-web/asset/forms/api/register.php?debug=1', { method: 'POST', body: fd });
+        const res = await fetch('/asset/forms/api/register.php?debug=1', { method: 'POST', body: fd });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) {
           throw new Error(data && data.error ? data.error : 'Server error');

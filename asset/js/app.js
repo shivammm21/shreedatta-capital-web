@@ -185,7 +185,9 @@ if (dashboardRoot) {
       // Create safe filename: firstName_lastName_drawName.pdf
       const safeName = u.name.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_{2,}/g, '_').trim('_');
       const safeDraw = u.drawName ? u.drawName.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/-{2,}/g, '-').trim('-') : u.form.toLowerCase();
-      return `/shreedatta-capital-web/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
+      const origin = window.location.origin || '';
+      // Use absolute URL to avoid any base href or server-side prefixing side-effects
+      return `/pdffiles/${safeName}_${safeDraw}.pdf`;
     };
 
     const formatDT = (dt) => {

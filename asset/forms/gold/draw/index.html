@@ -552,7 +552,7 @@
       const prevText = btn.textContent;
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('/shreedatta-capital-web/asset/forms/api/register.php?debug=1&v=' + Date.now(), { method: 'POST', body: fd });
+        const res = await fetch('/asset/forms/api/register.php?debug=1&v=' + Date.now(), { method: 'POST', body: fd });
         const responseText = await res.text();
         console.log('Response status:', res.status, 'Response text:', responseText);
         let data = {};

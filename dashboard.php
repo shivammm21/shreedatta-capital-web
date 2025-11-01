@@ -68,7 +68,7 @@ $tBike = make_short_token('b', $exp, $LINK_SECRET);
       <div class="top-categories">
         <div class="category-card gold">
           <div class="category-title">Gold Draw</div>
-          <div class="category-sub">Manage entries and results</div>
+          <div class="category-sub">Agreement</div>
           <div class="category-meta"><span class="count-badge big" data-count-key="gold_registration">0</span> users filled</div>
           <div class="category-links">
             <a class="url" href="/link.php?t=<?php echo urlencode($tGold); ?>"></a>
@@ -77,7 +77,7 @@ $tBike = make_short_token('b', $exp, $LINK_SECRET);
         </div>
         <div class="category-card cash">
           <div class="category-title">Cash Draw</div>
-          <div class="category-sub">Payouts and records</div>
+          <div class="category-sub">Agreement</div>
           <div class="category-meta"><span class="count-badge big" data-count-key="cash_registration">0</span> users filled</div>
           <div class="category-links">
             <a class="url" href="/link.php?t=<?php echo urlencode($tCash); ?>"></a>
@@ -86,7 +86,7 @@ $tBike = make_short_token('b', $exp, $LINK_SECRET);
         </div>
         <div class="category-card bike">
           <div class="category-title">Bike Draw</div>
-          <div class="category-sub">Participants and winners</div>
+          <div class="category-sub">Agreement</div>
           <div class="category-meta"><span class="count-badge big" data-count-key="bike_registration">0</span> users filled</div>
           <div class="category-links">
             <a class="url" href="/link.php?t=<?php echo urlencode($tBike); ?>"></a>
@@ -158,6 +158,6 @@ $tBike = make_short_token('b', $exp, $LINK_SECRET);
     </div>
   </div>
 
-  <script src="asset/js/app.js"></script>
+  <script src="asset/js/app.js?v=2"></script>
 </body>
 </html>

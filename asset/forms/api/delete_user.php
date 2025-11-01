@@ -29,7 +29,7 @@ try {
   $conn->begin_transaction();
 
   // First, get user details to construct PDF filename before deletion
-  $stmt0 = $conn->prepare('SELECT FirstName, LastName, drawName FROM userTable WHERE ID = ?');
+  $stmt0 = $conn->prepare('SELECT FirstName, LastName, drawName FROM usertable WHERE ID = ?');
   if (!$stmt0) throw new Exception('Prepare failed');
   $stmt0->bind_param('i', $id);
   if (!$stmt0->execute()) throw new Exception('Execute failed');
@@ -37,22 +37,22 @@ try {
   $user = $result->fetch_assoc();
   $stmt0->close();
 
-  // Delete from AttachDoc
-  $stmt1 = $conn->prepare('DELETE FROM AttachDoc WHERE userID = ?');
+  // Delete from attachdoc
+  $stmt1 = $conn->prepare('DELETE FROM attachdoc WHERE userID = ?');
   if (!$stmt1) throw new Exception('Prepare failed');
   $stmt1->bind_param('i', $id);
   if (!$stmt1->execute()) throw new Exception('Execute failed');
   $stmt1->close();
 
-  // Delete from TokenTable
-  $stmt2 = $conn->prepare('DELETE FROM TokenTable WHERE userID = ?');
+  // Delete from tokentable
+  $stmt2 = $conn->prepare('DELETE FROM tokentable WHERE userID = ?');
   if (!$stmt2) throw new Exception('Prepare failed');
   $stmt2->bind_param('i', $id);
   if (!$stmt2->execute()) throw new Exception('Execute failed');
   $stmt2->close();
 
-  // Delete from userTable
-  $stmt3 = $conn->prepare('DELETE FROM userTable WHERE ID = ?');
+  // Delete from usertable
+  $stmt3 = $conn->prepare('DELETE FROM usertable WHERE ID = ?');
   if (!$stmt3) throw new Exception('Prepare failed');
   $stmt3->bind_param('i', $id);
   if (!$stmt3->execute()) throw new Exception('Execute failed');
@@ -75,7 +75,9 @@ try {
     if ($safeDraw === '') $safeDraw = 'draw';
     
     $pdfFileName = $safeName . '_' . $safeDraw . '.pdf';
-    $pdfFilePath = __DIR__ . '/../pdfFiles/' . $pdfFileName;
+    // Match register.php: store PDFs under project root 'pdffiles' (beside 'asset')
+    $projectRoot = dirname(__DIR__, 3); // from asset/forms/api -> project root
+    $pdfFilePath = $projectRoot . '/pdffiles/' . $pdfFileName;
     
     // Delete PDF file if it exists
     if (file_exists($pdfFilePath)) {
