@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Category - Shreedatta Capital</title>
+  <meta name="description" content="Category details" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📁</text></svg>">
+  <link rel="stylesheet" href="../../asset/css/style.css">
+  <style>
+    .page-shell { max-width: none; width: 100%; margin: 0; padding: 16px 20px; }
+    .crumb { display:inline-flex; align-items:center; gap:8px; background:#f1f5f9; color:#334155; border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; text-decoration:none; }
+    .crumb:hover { background:#e2e8f0; }
+    .title { margin: 12px 0 18px; }
+
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(280px, 360px)); gap:10px; width:auto; justify-content:start; }
+    @media (max-width: 780px) { .grid { grid-template-columns: 1fr; width: 100%; } }
+
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(2,6,23,0.06); position:relative; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .left { display:flex; align-items:center; gap:12px; }
+    .icon { width:42px; height:42px; border-radius:12px; background:#f1f5f9; color:#334155; display:flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; }
+    .icon svg { width:22px; height:22px; }
+    .name { font-weight:700; color:#0f172a; }
+    .count { border:1px solid #e5e7eb; background:#f8fafc; color:#0f172a; border-radius:9999px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; font-weight:800; }
+    .bar { margin-top:16px; height:40px; border:1px solid #e5e7eb; border-radius:12px; background:#f8fafc; }
+
+    .plus { cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:60px; color:#2563eb; background:#f8fafc; border:1px dashed #94a3b8; }
+    .plus:hover { background:#f1f5f9; }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <a class="crumb" href="./index.html">← Admin Dashboard</a>
+    <h1 class="title" id="catTitle">Category</h1>
+
+    <div class="grid">
+      <div class="card" id="catCard">
+        <div class="row">
+          <div class="left">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              </svg>
+            </div>
+            <div class="name" id="catName">Category</div>
+          </div>
+          <div class="count" id="catCount">0</div>
+        </div>
+        <div class="bar"></div>
+      </div>
+
+      <div class="card plus" id="plusCard" title="Add new item">+</div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const pretty = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+      const params = new URLSearchParams(window.location.search);
+      const key = (params.get('name') || '').trim().toLowerCase();
+      const title = document.getElementById('catTitle');
+      const nameEl = document.getElementById('catName');
+      if (title) title.textContent = pretty(key) || 'Category';
+      if (nameEl) nameEl.textContent = pretty(key) || 'Category';
+
+      // Load count from users.json for this category
+      const getRoot = () => '../../';
+      fetch(getRoot() + 'asset/forms/api/users.json', { cache: 'no-store' })
+        .then(r => r.json()).then(data => {
+          const list = (data && data.users) ? data.users : [];
+          const count = list.filter(u => String(u.drawCategory||'').toLowerCase() === key).length;
+          const countEl = document.getElementById('catCount');
+          if (countEl) countEl.textContent = String(count);
+        }).catch(() => {
+          const countEl = document.getElementById('catCount');
+          if (countEl) countEl.textContent = '0';
+        });
+    })();
+  </script>
+</body>
+</html>

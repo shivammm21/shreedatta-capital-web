@@ -13,7 +13,7 @@ if (toggleBtn) {
   });
 }
 
-// Login handling with simple validation
+// Login handling with simple validation (static, no PHP)
 const form = document.getElementById('loginForm');
 if (form) {
   form.addEventListener('submit', (e) => {
@@ -28,37 +28,23 @@ if (form) {
       if (error) error.textContent = 'Please enter both username and password.';
       return;
     }
-
-    // Server-side validation against DB
+    // In static mode validate against fixed demo credentials
+    const DEMO_USER = 'admin';
+    const DEMO_PASS = 'admin123';
     const btn = form.querySelector('button[type="submit"]');
     const prevText = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
     // Clear previous error
     if (error) error.textContent = '';
 
-    fetch('login.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin', // send cookies for PHP session
-      cache: 'no-store',
-      body: JSON.stringify({ username, password })
-    })
-      .then(async (res) => {
-        let data = {};
-        try { data = await res.json(); } catch (_) { /* non-JSON */ }
-        if (!res.ok || !data.ok) {
-          const msg = (data && (data.error || (data.debug && data.debug.message))) || (res.status >= 500 ? 'Server error' : 'Invalid username or password');
-          throw new Error(msg);
-        }
-        try { localStorage.setItem('auth', '1'); } catch (_) {}
-        window.location.href = 'dashboard.php';
-      })
-      .catch((err) => {
-        if (error) error.textContent = err && err.message ? err.message : 'Login failed';
-      })
-      .finally(() => {
-        if (btn) { btn.disabled = false; btn.textContent = prevText || 'Sign in'; }
-      });
+    if (username === DEMO_USER && password === DEMO_PASS) {
+      try { localStorage.setItem('auth', '1'); } catch (_) {}
+      window.location.href = '/admin/super/index.html';
+    } else {
+      if (error) error.textContent = 'Invalid username or password';
+    }
+
+    if (btn) { btn.disabled = false; btn.textContent = prevText || 'Sign in'; }
   });
 }
 
@@ -78,11 +64,14 @@ if (dashboardRoot) {
       });
     }
 
-    // Render absolute URLs for category links (single link per block), using existing hrefs
+    // Render absolute URLs for category links using data-path (static)
     const origin = window.location.origin || '';
     const linkEls = dashboardRoot.querySelectorAll('.category-links a.url');
     linkEls.forEach(a => {
-      const href = a.getAttribute('href') || '';
+      const dataPath = a.getAttribute('data-path') || '';
+      const href = dataPath || a.getAttribute('href') || '';
+      // Set actual href so clicking opens the static page
+      if (href) a.setAttribute('href', href);
       const absolute = href.startsWith('http') ? href : `${origin}${href.startsWith('/') ? href : `/${href}`}`;
       a.textContent = absolute;
       a.target = '_blank';
@@ -159,11 +148,14 @@ if (dashboardRoot) {
       return new Date(Number(Y), Number(M)-1, Number(D), Number(h), Number(i), Number(sec||'0'));
     };
 
-    // Load users + counts from backend
+    // Detect root prefix when running under /admin/super/
+    const getRootPrefix = () => (location.pathname.includes('/admin/super/') ? '../../' : '');
+
+    // Load users + counts from static JSON
     const getUsers = async () => {
-      const res = await fetch('asset/forms/api/list_users.php', { cache: 'no-store' });
+      const res = await fetch(`${getRootPrefix()}asset/forms/api/users.json`, { cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data && data.error ? data.error : 'Failed to load users');
+      if (!res.ok) throw new Error('Failed to load users');
       const list = (data.users || []).map(u => ({
         id: String(u.id),
         name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
@@ -171,7 +163,8 @@ if (dashboardRoot) {
         drawName: u.drawName || '',
         createdAt: parseMySQLDateTime(u.dateAndTime),
       }));
-      return { list, counts: data.counts || {} };
+      const counts = data.counts || { gold: 0, cash: 0, bike: 0, car: 0 };
+      return { list, counts };
     };
 
     const buildUrl = (u) => {
@@ -258,6 +251,241 @@ if (dashboardRoot) {
       renderUsers(list);
     };
 
+    // Helpers to recalc counts from local users list (static mode)
+    const recalcCounts = (list) => {
+      const counts = { gold: 0, cash: 0, bike: 0, car: 0 };
+      list.forEach(u => {
+        if (u.form === 'gold') counts.gold++;
+        else if (u.form === 'cash') counts.cash++;
+        else if (u.form === 'bike') counts.bike++;
+        else if (u.form === 'car') counts.car++;
+      });
+      return counts;
+    };
+
+    // Render summary stats if present
+    const renderStats = (counts = { gold:0, cash:0, bike:0, car:0 }) => {
+      const gold = counts.gold || 0;
+      const cash = counts.cash || 0;
+      const bike = counts.bike || 0;
+      const car  = counts.car  || 0;
+      const total = gold + cash + bike + car;
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(val);
+      };
+      setText('stats-total', total);
+      setText('stats-gold', gold);
+      setText('stats-cash', cash);
+      setText('stats-bike', bike);
+      setText('stats-car', car);
+    };
+
+    // Super admin: categories grid (4 columns) + plus card
+    const suGrid = document.getElementById('su-grid');
+    const suTotal = document.getElementById('su-total');
+    const suCategories = document.getElementById('su-categories');
+
+    const loadCustomCategories = () => {
+      try { return JSON.parse(localStorage.getItem('customCategories') || '[]'); } catch { return []; }
+    };
+    const saveCustomCategories = (arr) => {
+      try { localStorage.setItem('customCategories', JSON.stringify(arr || [])); } catch {}
+    };
+
+    const normalizeCat = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const displayName = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+    const buildCategoryCounts = (usersList, baseCounts = {}) => {
+      // Start empty to avoid showing categories with 0 by default
+      const cnt = {};
+      // Include only base counts that are > 0
+      Object.keys(baseCounts || {}).forEach(k => {
+        const v = Number(baseCounts[k] || 0);
+        if (v > 0) cnt[k] = v;
+      });
+      // Derive from users list
+      (usersList || []).forEach(u => {
+        const key = normalizeCat(u.form);
+        if (!key) return;
+        cnt[key] = (cnt[key] || 0) + 1;
+      });
+      // Include any custom categories (with 0 if not present)
+      loadCustomCategories().forEach(c => {
+        const key = normalizeCat(c);
+        if (key && !(key in cnt)) cnt[key] = 0;
+      });
+      return cnt;
+    };
+
+    // Add Category modal wiring
+    const addCatModal = document.getElementById('addCategoryModal');
+    const addCatInput = document.getElementById('addCategoryInput');
+    const addCatCancel = document.getElementById('addCategoryCancel');
+    const addCatConfirm = document.getElementById('addCategoryConfirm');
+
+    // Rename Category modal wiring
+    const renCatModal = document.getElementById('renameCategoryModal');
+    const renCatInput = document.getElementById('renameCategoryInput');
+    const renCatCancel = document.getElementById('renameCategoryCancel');
+    const renCatConfirm = document.getElementById('renameCategoryConfirm');
+    let pendingRenameKey = null;
+
+    const openAddCategoryModal = () => {
+      if (!addCatModal) return;
+      addCatModal.classList.remove('hidden');
+      if (addCatInput) {
+        addCatInput.value = '';
+        setTimeout(() => addCatInput.focus(), 0);
+      }
+    };
+    const closeAddCategoryModal = () => {
+      if (!addCatModal) return;
+      addCatModal.classList.add('hidden');
+    };
+    if (addCatCancel) addCatCancel.addEventListener('click', closeAddCategoryModal);
+    if (addCatModal) addCatModal.addEventListener('click', (e) => { if (e.target === addCatModal) closeAddCategoryModal(); });
+
+    const handleAddCategory = (countsObj) => {
+      const name = addCatInput ? addCatInput.value : '';
+      const key = normalizeCat(name);
+      if (!key) { if (addCatInput) addCatInput.focus(); return; }
+      const custom = loadCustomCategories();
+      if (!custom.includes(key)) {
+        custom.push(key);
+        saveCustomCategories(custom);
+      }
+      const merged = { ...countsObj };
+      if (!(key in merged)) merged[key] = 0;
+      renderSuperGrid(merged);
+      closeAddCategoryModal();
+    };
+    if (addCatConfirm) addCatConfirm.addEventListener('click', () => handleAddCategory(lastRenderedCounts || {}));
+    if (addCatInput) addCatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(lastRenderedCounts || {}); } });
+
+    let lastRenderedCounts = null;
+
+    const openRenameCategoryModal = (key) => {
+      pendingRenameKey = key;
+      if (!renCatModal) return;
+      renCatModal.classList.remove('hidden');
+      if (renCatInput) {
+        renCatInput.value = displayName(key);
+        setTimeout(() => renCatInput.focus(), 0);
+      }
+    };
+    const closeRenameCategoryModal = () => {
+      if (!renCatModal) return;
+      renCatModal.classList.add('hidden');
+      pendingRenameKey = null;
+    };
+    if (renCatCancel) renCatCancel.addEventListener('click', closeRenameCategoryModal);
+    if (renCatModal) renCatModal.addEventListener('click', (e) => { if (e.target === renCatModal) closeRenameCategoryModal(); });
+    const handleRenameCategory = (countsObj) => {
+      const key = pendingRenameKey;
+      if (!key) return;
+      const newName = renCatInput ? renCatInput.value : '';
+      const newKey = normalizeCat(newName);
+      if (!newKey || newKey === key) { if (!newKey && renCatInput) renCatInput.focus(); return; }
+      // rename in custom list
+      const custom = loadCustomCategories().filter(Boolean).map(normalizeCat);
+      const idx = custom.indexOf(key);
+      if (idx !== -1) { custom[idx] = newKey; saveCustomCategories(Array.from(new Set(custom))); }
+      // rename in counts object
+      const updated = { ...countsObj };
+      updated[newKey] = (updated[newKey] || 0) + (updated[key] || 0);
+      delete updated[key];
+      renderSuperGrid(updated);
+      closeRenameCategoryModal();
+    };
+    if (renCatConfirm) renCatConfirm.addEventListener('click', () => handleRenameCategory(lastRenderedCounts || {}));
+    if (renCatInput) renCatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleRenameCategory(lastRenderedCounts || {}); } });
+
+    const renderSuperGrid = (countsObj) => {
+      if (!suGrid) return;
+      const entries = Object.entries(countsObj || {})
+        .filter(([k]) => k) // ignore empty
+        .sort((a,b) => a[0].localeCompare(b[0]));
+      const total = entries.reduce((acc, [,v]) => acc + Number(v||0), 0);
+      if (suTotal) suTotal.textContent = String(total);
+      if (suCategories) suCategories.textContent = String(entries.length);
+      lastRenderedCounts = { ...countsObj };
+      const frag = document.createDocumentFragment();
+      // Create a card for each category
+      entries.forEach(([key, val]) => {
+        const card = document.createElement('div');
+        card.className = 'cat-card';
+        const name = document.createElement('div');
+        name.className = 'cat-name';
+        name.textContent = displayName(key);
+        const count = document.createElement('div');
+        count.className = 'cat-count';
+        count.textContent = String(val || 0);
+        // actions
+        const actions = document.createElement('div');
+        actions.className = 'cat-actions';
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'icon-btn-sm';
+        editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
+        editBtn.setAttribute('aria-label', 'Edit category');
+        editBtn.title = 'Edit';
+        editBtn.addEventListener('click', () => openRenameCategoryModal(key));
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'icon-btn-sm';
+        delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"></polyline><path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2-0.9 2-2l1-14"></path><path d="m10,11 0,6"></path><path d="m14,11 0,6"></path><path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path></svg>';
+        delBtn.setAttribute('aria-label', 'Delete category');
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', () => {
+          const cm = document.getElementById('confirmModal');
+          const confirmDeleteBtn = document.getElementById('confirmDelete');
+          const confirmCancelBtn = document.getElementById('confirmCancel');
+          if (!cm || !confirmDeleteBtn || !confirmCancelBtn) return;
+          cm.classList.remove('hidden');
+          const onCancel = () => {
+            cm.classList.add('hidden');
+            confirmCancelBtn.removeEventListener('click', onCancel);
+            confirmDeleteBtn.removeEventListener('click', onConfirm);
+          };
+          const onConfirm = () => {
+            const updated = { ...countsObj };
+            delete updated[key];
+            // remove from custom categories as well
+            const custom = loadCustomCategories().filter(c => normalizeCat(c) !== key);
+            saveCustomCategories(custom);
+            renderSuperGrid(updated);
+            onCancel();
+          };
+          confirmCancelBtn.addEventListener('click', onCancel, { once: true });
+          confirmDeleteBtn.addEventListener('click', onConfirm, { once: true });
+        });
+        actions.append(editBtn, delBtn);
+        // clicking the card navigates to category page (except on action buttons)
+        card.addEventListener('click', (ev) => {
+          if (ev.target.closest('.cat-actions')) return;
+          // If we're already in /admin/super/, link to ./category.html; otherwise compute relative path
+          const inSuper = location.pathname.includes('/admin/super/');
+          const href = inSuper ? `category.html?name=${encodeURIComponent(key)}` : `/admin/super/category.html?name=${encodeURIComponent(key)}`;
+          window.location.href = href;
+        });
+        card.append(actions, name, count);
+        frag.appendChild(card);
+      });
+      // Plus card
+      const add = document.createElement('div');
+      add.className = 'cat-card add-card';
+      add.title = 'Add new category';
+      const plus = document.createElement('div');
+      plus.className = 'add-plus';
+      plus.textContent = '+';
+      add.appendChild(plus);
+      add.addEventListener('click', openAddCategoryModal);
+      frag.appendChild(add);
+      suGrid.innerHTML = '';
+      suGrid.appendChild(frag);
+    };
+
     // Confirm delete modal wiring
     const modal = document.getElementById('confirmModal');
     const confirmDeleteBtn = document.getElementById('confirmDelete');
@@ -280,17 +508,13 @@ if (dashboardRoot) {
         const prevText = confirmDeleteBtn.textContent;
         confirmDeleteBtn.disabled = true; confirmDeleteBtn.textContent = 'Deleting...';
         try {
-          const res = await fetch('asset/forms/api/delete_user.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: pendingDeleteUserId })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.ok) throw new Error(data && data.error ? data.error : 'Delete failed');
-          // Reload users and counts from backend
-          const { list, counts } = await getUsers();
-          users = list;
+          // Static delete: remove from local list and update counts
+          users = users.filter(u => String(u.id) !== String(pendingDeleteUserId));
+          const counts = recalcCounts(users);
           renderCounts(counts);
+          // Update simplified super grid (ensures plus card shows)
+          const merged = buildCategoryCounts(users, counts);
+          renderSuperGrid(merged);
           closeConfirm();
           applyFilters();
         } catch (_) {
@@ -317,12 +541,12 @@ if (dashboardRoot) {
     if (logoutConfirmBtn) {
       logoutConfirmBtn.addEventListener('click', async () => {
         try { localStorage.removeItem('auth'); } catch (_) {}
-        try {
-          await fetch('logout.php', { method: 'POST', credentials: 'same-origin', cache: 'no-store' });
-        } catch (_) {}
         window.location.replace('index.html');
       });
     }
+
+    // Pre-render super grid so the plus card is visible immediately
+    try { renderSuperGrid(buildCategoryCounts([], {})); } catch {}
 
     // Initial load from backend and render
     (async () => {
@@ -330,8 +554,16 @@ if (dashboardRoot) {
         const { list, counts } = await getUsers();
         users = list;
         renderCounts(counts);
+        renderStats(counts);
+        // Build and render super grid with plus card
+        const merged = buildCategoryCounts(users, counts);
+        renderSuperGrid(merged);
       } catch (e) {
-        renderCounts({ gold:0, cash:0, bike:0 });
+        const zero = { gold:0, cash:0, bike:0, car:0 };
+        renderCounts(zero);
+        renderStats(zero);
+        const merged = buildCategoryCounts([], zero);
+        renderSuperGrid(merged);
       } finally {
         applyFilters();
       }
