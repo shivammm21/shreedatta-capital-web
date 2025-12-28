@@ -31,15 +31,27 @@ if (form) {
     // In static mode validate against fixed demo credentials
     const DEMO_USER = 'admin';
     const DEMO_PASS = 'admin123';
+    const SUBADMIN_USER = 'subadmin';
+    const SUBADMIN_PASS = 'subadmin123';
     const btn = form.querySelector('button[type="submit"]');
     const prevText = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
     // Clear previous error
     if (error) error.textContent = '';
 
+    let userRole = null;
     if (username === DEMO_USER && password === DEMO_PASS) {
-      try { localStorage.setItem('auth', '1'); } catch (_) {}
-      window.location.href = '/admin/super/index.html';
+      userRole = 'admin';
+    } else if (username === SUBADMIN_USER && password === SUBADMIN_PASS) {
+      userRole = 'subadmin';
+    }
+
+    if (userRole) {
+      try { 
+        localStorage.setItem('auth', '1');
+        localStorage.setItem('userRole', userRole);
+      } catch (_) {}
+      window.location.href = 'admin/super/index.html';
     } else {
       if (error) error.textContent = 'Invalid username or password';
     }
@@ -52,9 +64,12 @@ if (form) {
 const dashboardRoot = document.getElementById('dashboard');
 if (dashboardRoot) {
   const isAuthed = (() => { try { return localStorage.getItem('auth') === '1'; } catch (_) { return false; } })();
+  const getUserRole = (() => { try { return localStorage.getItem('userRole') || 'admin'; } catch (_) { return 'admin'; } })();
+  const isAdmin = getUserRole === 'admin';
+  
   if (!isAuthed) {
     // Not authenticated, send to login
-    window.location.replace('index.html');
+    window.location.replace('../../index.html');
   } else {
     // Wire up logout with confirmation
     const logoutBtn = document.getElementById('logout');
@@ -343,8 +358,51 @@ if (dashboardRoot) {
       if (!addCatModal) return;
       addCatModal.classList.add('hidden');
     };
-    if (addCatCancel) addCatCancel.addEventListener('click', closeAddCategoryModal);
-    if (addCatModal) addCatModal.addEventListener('click', (e) => { if (e.target === addCatModal) closeAddCategoryModal(); });
+
+    // Cancel confirmation functions
+    window.showCancelConfirmation = () => {
+      // Check if any data has been entered
+      const hasData = checkIfFormDataEntered();
+      if (hasData) {
+        const modal = document.getElementById('cancelModal');
+        if (modal) modal.classList.remove('hidden');
+      } else {
+        closeAddCategoryModal();
+      }
+    };
+
+    const checkIfFormDataEntered = () => {
+      const name = addCatInput ? addCatInput.value.trim() : '';
+      return !!name;
+    };
+
+    window.closeCancelModal = () => {
+      const modal = document.getElementById('cancelModal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.confirmCancel = () => {
+      closeCancelModal();
+      // Check which modal is currently open and close it
+      const addModal = document.getElementById('addCategoryModal');
+      const renameModal = document.getElementById('renameCategoryModal');
+      
+      if (addModal && !addModal.classList.contains('hidden')) {
+        closeAddCategoryModal();
+      } else if (renameModal && !renameModal.classList.contains('hidden')) {
+        closeRenameCategoryModal();
+      }
+    };
+
+    // Prevent confirmation modal from closing on outside click
+    const cancelModal = document.getElementById('cancelModal');
+    if (cancelModal) {
+      cancelModal.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+    if (addCatCancel) addCatCancel.addEventListener('click', window.showCancelConfirmation);
+    // Remove outside click handler to prevent modal from closing
 
     const handleAddCategory = (countsObj) => {
       const name = addCatInput ? addCatInput.value : '';
@@ -379,8 +437,29 @@ if (dashboardRoot) {
       renCatModal.classList.add('hidden');
       pendingRenameKey = null;
     };
-    if (renCatCancel) renCatCancel.addEventListener('click', closeRenameCategoryModal);
-    if (renCatModal) renCatModal.addEventListener('click', (e) => { if (e.target === renCatModal) closeRenameCategoryModal(); });
+
+    // Rename modal cancel confirmation functions
+    window.showRenameCancelConfirmation = () => {
+      // Check if any data has been changed
+      const hasChanges = checkIfRenameFormDataChanged();
+      if (hasChanges) {
+        const modal = document.getElementById('cancelModal');
+        if (modal) modal.classList.remove('hidden');
+      } else {
+        closeRenameCategoryModal();
+      }
+    };
+
+    const checkIfRenameFormDataChanged = () => {
+      if (!pendingRenameKey || !renCatInput) return false;
+      
+      const originalName = displayName(pendingRenameKey);
+      const currentName = renCatInput.value.trim();
+      
+      return currentName !== originalName;
+    };
+    if (renCatCancel) renCatCancel.addEventListener('click', window.showRenameCancelConfirmation);
+    // Remove outside click handler to prevent modal from closing
     const handleRenameCategory = (countsObj) => {
       const key = pendingRenameKey;
       if (!key) return;
@@ -404,8 +483,7 @@ if (dashboardRoot) {
     const renderSuperGrid = (countsObj) => {
       if (!suGrid) return;
       const entries = Object.entries(countsObj || {})
-        .filter(([k]) => k) // ignore empty
-        .sort((a,b) => a[0].localeCompare(b[0]));
+        .filter(([k]) => k); // ignore empty
       const total = entries.reduce((acc, [,v]) => acc + Number(v||0), 0);
       if (suTotal) suTotal.textContent = String(total);
       if (suCategories) suCategories.textContent = String(entries.length);
@@ -424,43 +502,47 @@ if (dashboardRoot) {
         // actions
         const actions = document.createElement('div');
         actions.className = 'cat-actions';
-        const editBtn = document.createElement('button');
-        editBtn.type = 'button';
-        editBtn.className = 'icon-btn-sm';
-        editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
-        editBtn.setAttribute('aria-label', 'Edit category');
-        editBtn.title = 'Edit';
-        editBtn.addEventListener('click', () => openRenameCategoryModal(key));
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'icon-btn-sm';
-        delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"></polyline><path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2-0.9 2-2l1-14"></path><path d="m10,11 0,6"></path><path d="m14,11 0,6"></path><path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path></svg>';
-        delBtn.setAttribute('aria-label', 'Delete category');
-        delBtn.title = 'Delete';
-        delBtn.addEventListener('click', () => {
-          const cm = document.getElementById('confirmModal');
-          const confirmDeleteBtn = document.getElementById('confirmDelete');
-          const confirmCancelBtn = document.getElementById('confirmCancel');
-          if (!cm || !confirmDeleteBtn || !confirmCancelBtn) return;
-          cm.classList.remove('hidden');
-          const onCancel = () => {
-            cm.classList.add('hidden');
-            confirmCancelBtn.removeEventListener('click', onCancel);
-            confirmDeleteBtn.removeEventListener('click', onConfirm);
-          };
-          const onConfirm = () => {
-            const updated = { ...countsObj };
-            delete updated[key];
-            // remove from custom categories as well
-            const custom = loadCustomCategories().filter(c => normalizeCat(c) !== key);
-            saveCustomCategories(custom);
-            renderSuperGrid(updated);
-            onCancel();
-          };
-          confirmCancelBtn.addEventListener('click', onCancel, { once: true });
-          confirmDeleteBtn.addEventListener('click', onConfirm, { once: true });
-        });
-        actions.append(editBtn, delBtn);
+        
+        // Only show edit and delete buttons for admin users
+        if (isAdmin) {
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'icon-btn-sm';
+          editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
+          editBtn.setAttribute('aria-label', 'Edit category');
+          editBtn.title = 'Edit';
+          editBtn.addEventListener('click', () => openRenameCategoryModal(key));
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'icon-btn-sm';
+          delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"></polyline><path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path><path d="m10,11 0,6"></path><path d="m14,11 0,6"></path><path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path></svg>';
+          delBtn.setAttribute('aria-label', 'Delete category');
+          delBtn.title = 'Delete';
+          delBtn.addEventListener('click', () => {
+            const cm = document.getElementById('confirmModal');
+            const confirmDeleteBtn = document.getElementById('confirmDelete');
+            const confirmCancelBtn = document.getElementById('confirmCancel');
+            if (!cm || !confirmDeleteBtn || !confirmCancelBtn) return;
+            cm.classList.remove('hidden');
+            const onCancel = () => {
+              cm.classList.add('hidden');
+              confirmCancelBtn.removeEventListener('click', onCancel);
+              confirmDeleteBtn.removeEventListener('click', onConfirm);
+            };
+            const onConfirm = () => {
+              const updated = { ...countsObj };
+              delete updated[key];
+              // remove from custom categories as well
+              const custom = loadCustomCategories().filter(c => normalizeCat(c) !== key);
+              saveCustomCategories(custom);
+              renderSuperGrid(updated);
+              onCancel();
+            };
+            confirmCancelBtn.addEventListener('click', onCancel, { once: true });
+            confirmDeleteBtn.addEventListener('click', onConfirm, { once: true });
+          });
+          actions.append(editBtn, delBtn);
+        }
         // clicking the card navigates to category page (except on action buttons)
         card.addEventListener('click', (ev) => {
           if (ev.target.closest('.cat-actions')) return;
@@ -472,16 +554,18 @@ if (dashboardRoot) {
         card.append(actions, name, count);
         frag.appendChild(card);
       });
-      // Plus card
-      const add = document.createElement('div');
-      add.className = 'cat-card add-card';
-      add.title = 'Add new category';
-      const plus = document.createElement('div');
-      plus.className = 'add-plus';
-      plus.textContent = '+';
-      add.appendChild(plus);
-      add.addEventListener('click', openAddCategoryModal);
-      frag.appendChild(add);
+      // Plus card - only for admin users
+      if (isAdmin) {
+        const add = document.createElement('div');
+        add.className = 'cat-card add-card';
+        add.title = 'Add new category';
+        const plus = document.createElement('div');
+        plus.className = 'add-plus';
+        plus.textContent = '+';
+        add.appendChild(plus);
+        add.addEventListener('click', openAddCategoryModal);
+        frag.appendChild(add);
+      }
       suGrid.innerHTML = '';
       suGrid.appendChild(frag);
     };
@@ -540,8 +624,11 @@ if (dashboardRoot) {
     if (logoutModal) logoutModal.addEventListener('click', (e) => { if (e.target === logoutModal) closeLogoutConfirm(); });
     if (logoutConfirmBtn) {
       logoutConfirmBtn.addEventListener('click', async () => {
-        try { localStorage.removeItem('auth'); } catch (_) {}
-        window.location.replace('index.html');
+        try { 
+          localStorage.removeItem('auth'); 
+          localStorage.removeItem('userRole');
+        } catch (_) {}
+        window.location.replace('../../index.html');
       });
     }
 
