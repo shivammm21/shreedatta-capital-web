@@ -1064,8 +1064,9 @@
           const currentCategory = getCategoryParam();
           console.log('Current category:', currentCategory); // Debug log
           
-          // Fetch real user data from all-submissions table with category filter
-          const apiUrl = `/shreedatta-capital-web/admin/super/api/get_submissions.php${currentCategory ? `?category=${encodeURIComponent(currentCategory)}` : ''}`;
+          // Fetch real user data. If the UI has 'All' selected, do not filter by category on the server.
+          const shouldFilterByCategory = currentCategory && !activeFilters.has('All');
+          const apiUrl = `/admin/super/api/get_submissions.php${shouldFilterByCategory ? `?category=${encodeURIComponent(currentCategory)}` : ''}`;
           console.log('API URL:', apiUrl); // Debug log
           
           const response = await fetch(apiUrl, {
