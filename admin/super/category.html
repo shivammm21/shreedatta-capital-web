@@ -1066,7 +1066,7 @@
           
           // Fetch real user data. If the UI has 'All' selected, do not filter by category on the server.
           const shouldFilterByCategory = currentCategory && !activeFilters.has('All');
-          const apiUrl = `/admin/super/api/get_submissions.php${shouldFilterByCategory ? `?category=${encodeURIComponent(currentCategory)}` : ''}`;
+          const apiUrl = `./api/get_submissions.php${shouldFilterByCategory ? `?category=${encodeURIComponent(currentCategory)}` : ''}`;
           console.log('API URL:', apiUrl); // Debug log
           
           const response = await fetch(apiUrl, {
