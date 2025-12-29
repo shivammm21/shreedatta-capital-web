@@ -13,65 +13,60 @@ if (toggleBtn) {
   });
 }
 
-// Login handling with simple validation (static, no PHP)
+// If we're on the login page and already authenticated, redirect to the right dashboard
 const form = document.getElementById('loginForm');
 if (form) {
-  form.addEventListener('submit', (e) => {
+  (async () => {
+    try {
+      const res = await fetch('/shreedatta-capital-web/asset/db/session.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data && data.ok && data.redirect) {
+        window.location.href = data.redirect;
+        return;
+      }
+    } catch (_) { /* ignore */ }
+  })();
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const error = document.getElementById('error');
-    if (error) error.textContent = '';
-
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-
-    if (!username || !password) {
-      if (error) error.textContent = 'Please enter both username and password.';
-      return;
-    }
-    // In static mode validate against fixed demo credentials
-    const DEMO_USER = 'admin';
-    const DEMO_PASS = 'admin123';
-    const SUBADMIN_USER = 'subadmin';
-    const SUBADMIN_PASS = 'subadmin123';
+    const errorEl = document.getElementById('error');
+    if (errorEl) errorEl.textContent = '';
     const btn = form.querySelector('button[type="submit"]');
     const prevText = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
-    // Clear previous error
-    if (error) error.textContent = '';
 
-    let userRole = null;
-    if (username === DEMO_USER && password === DEMO_PASS) {
-      userRole = 'admin';
-    } else if (username === SUBADMIN_USER && password === SUBADMIN_PASS) {
-      userRole = 'subadmin';
+    try {
+      const fd = new FormData(form);
+      const res = await fetch('/shreedatta-capital-web/asset/db/login.php?ajax=1', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data || data.ok !== true) {
+        const msg = (data && data.error) ? data.error : 'Invalid username or password.';
+        if (errorEl) errorEl.textContent = msg;
+        return;
+      }
+      const redirect = data.redirect || '/shreedatta-capital-web/admin/super/index.php';
+      window.location.href = redirect;
+    } catch (err) {
+      if (errorEl) errorEl.textContent = 'Network error. Please try again.';
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prevText || 'Sign in'; }
     }
-
-    if (userRole) {
-      try { 
-        localStorage.setItem('auth', '1');
-        localStorage.setItem('userRole', userRole);
-      } catch (_) {}
-      window.location.href = 'admin/super/index.html';
-    } else {
-      if (error) error.textContent = 'Invalid username or password';
-    }
-
-    if (btn) { btn.disabled = false; btn.textContent = prevText || 'Sign in'; }
   });
 }
 
 // Dashboard guard and interactions
 const dashboardRoot = document.getElementById('dashboard');
 if (dashboardRoot) {
-  const isAuthed = (() => { try { return localStorage.getItem('auth') === '1'; } catch (_) { return false; } })();
-  const getUserRole = (() => { try { return localStorage.getItem('userRole') || 'admin'; } catch (_) { return 'admin'; } })();
-  const isAdmin = getUserRole === 'admin';
+  // Server-side PHP handles authentication; assume SUPER admin for UI controls
+  const isAuthed = true;
+  const getUserRole = 'admin';
+  const isAdmin = true;
   
-  if (!isAuthed) {
-    // Not authenticated, send to login
-    window.location.replace('../../index.html');
-  } else {
-    // Wire up logout with confirmation
+  // Wire up logout with confirmation
     const logoutBtn = document.getElementById('logout');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
@@ -404,15 +399,42 @@ if (dashboardRoot) {
     if (addCatCancel) addCatCancel.addEventListener('click', window.showCancelConfirmation);
     // Remove outside click handler to prevent modal from closing
 
-    const handleAddCategory = (countsObj) => {
+    const handleAddCategory = async (countsObj) => {
       const name = addCatInput ? addCatInput.value : '';
       const key = normalizeCat(name);
       if (!key) { if (addCatInput) addCatInput.focus(); return; }
-      const custom = loadCustomCategories();
-      if (!custom.includes(key)) {
-        custom.push(key);
-        saveCustomCategories(custom);
+
+      // If we're in SUPER admin area, persist to backend table `forms_data`
+      const inSuper = location.pathname.includes('/admin/super/');
+      if (inSuper) {
+        try {
+          const fd = new FormData();
+          fd.append('name', name.trim());
+          const res = await fetch('/shreedatta-capital-web/admin/super/api/category_add.php', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            const msg = (data && data.error) ? data.error : 'Failed to add category';
+            const detail = (data && data.detail) ? `\nDetails: ${data.detail}` : '';
+            alert(msg + detail);
+            return;
+          }
+        } catch (_) {
+          alert('Network error. Please try again.');
+          return;
+        }
+      } else {
+        // Static/local fallback: remember locally
+        const custom = loadCustomCategories();
+        if (!custom.includes(key)) {
+          custom.push(key);
+          saveCustomCategories(custom);
+        }
       }
+
       const merged = { ...countsObj };
       if (!(key in merged)) merged[key] = 0;
       renderSuperGrid(merged);
@@ -460,17 +482,40 @@ if (dashboardRoot) {
     };
     if (renCatCancel) renCatCancel.addEventListener('click', window.showRenameCancelConfirmation);
     // Remove outside click handler to prevent modal from closing
-    const handleRenameCategory = (countsObj) => {
+    const handleRenameCategory = async (countsObj) => {
       const key = pendingRenameKey;
       if (!key) return;
       const newName = renCatInput ? renCatInput.value : '';
       const newKey = normalizeCat(newName);
       if (!newKey || newKey === key) { if (!newKey && renCatInput) renCatInput.focus(); return; }
-      // rename in custom list
-      const custom = loadCustomCategories().filter(Boolean).map(normalizeCat);
-      const idx = custom.indexOf(key);
-      if (idx !== -1) { custom[idx] = newKey; saveCustomCategories(Array.from(new Set(custom))); }
-      // rename in counts object
+
+      const inSuper = location.pathname.includes('/admin/super/');
+      if (inSuper) {
+        try {
+          const fd = new FormData();
+          fd.append('old', key);
+          fd.append('new', newName.trim());
+          const res = await fetch('/shreedatta-capital-web/admin/super/api/category_rename.php', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            alert((data && data.error) ? data.error : 'Failed to rename category');
+            return;
+          }
+        } catch (_) {
+          alert('Network error. Please try again.');
+          return;
+        }
+      } else {
+        // keep local list updated for static mode
+        const custom = loadCustomCategories().filter(Boolean).map(normalizeCat);
+        const idx = custom.indexOf(key);
+        if (idx !== -1) { custom[idx] = newKey; saveCustomCategories(Array.from(new Set(custom))); }
+      }
+      // rename in counts object (UI)
       const updated = { ...countsObj };
       updated[newKey] = (updated[newKey] || 0) + (updated[key] || 0);
       delete updated[key];
@@ -624,11 +669,7 @@ if (dashboardRoot) {
     if (logoutModal) logoutModal.addEventListener('click', (e) => { if (e.target === logoutModal) closeLogoutConfirm(); });
     if (logoutConfirmBtn) {
       logoutConfirmBtn.addEventListener('click', async () => {
-        try { 
-          localStorage.removeItem('auth'); 
-          localStorage.removeItem('userRole');
-        } catch (_) {}
-        window.location.replace('../../index.html');
+        window.location.href = '/shreedatta-capital-web/asset/db/logout.php';
       });
     }
 
@@ -643,7 +684,22 @@ if (dashboardRoot) {
         renderCounts(counts);
         renderStats(counts);
         // Build and render super grid with plus card
-        const merged = buildCategoryCounts(users, counts);
+        let merged = buildCategoryCounts(users, counts);
+        // If we are in SUPER dashboard, also load categories from DB and merge
+        const inSuper = location.pathname.includes('/admin/super/');
+        if (inSuper) {
+          try {
+            const res = await fetch('/shreedatta-capital-web/admin/super/api/category_list.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data && Array.isArray(data.categories)) {
+              merged = { ...merged };
+              data.categories.forEach(name => {
+                const key = normalizeCat(name);
+                if (key && !(key in merged)) merged[key] = 0; // show with count 0 if no users
+              });
+            }
+          } catch (_) { /* ignore */ }
+        }
         renderSuperGrid(merged);
       } catch (e) {
         const zero = { gold:0, cash:0, bike:0, car:0 };
@@ -679,5 +735,4 @@ if (dashboardRoot) {
         });
       });
     }
-  }
 }

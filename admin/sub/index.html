@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sub Admin Dashboard - Shreedatta Capital</title>
+  <meta name="description" content="Sub admin dashboard for Shreedatta Capital" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🗂️</text></svg>">
+  <link rel="stylesheet" href="../../asset/css/style.css">
+  <style>
+    .wrap { max-width: 980px; margin: 32px auto; padding: 16px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px; background:#f8fafc; }
+    .btn { appearance:none; border:1px solid #111827; background:#111827; color:#fff; border-radius:10px; padding:10px 14px; cursor:pointer; text-decoration:none; }
+    .card { margin-top:16px; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px; }
+    .muted { color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <strong>Sub Admin Dashboard</strong>
+        <span class="muted" id="who"></span>
+      </div>
+      <a class="btn" href="../../asset/db/logout.php">Logout</a>
+    </div>
+    <div class="card">
+      <p>Welcome to the Sub Admin area. Your access is limited compared to SUPER admin.</p>
+      <p class="muted">This page can be extended later with sub-admin specific features.</p>
+    </div>
+  </div>
+  <script src="js/sub.js"></script>
+</body>
+</html>

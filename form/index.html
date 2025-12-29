@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gold draw registration page</title>
+  <link rel="stylesheet" href=".asset/css/style.css" />
+  <style>
+    /* Page-level overrides to allow scrolling (global CSS centers body with grid+100% height) */
+    html, body.form-page { height: auto; min-height: 100%; overflow-y: auto; }
+    body.form-page { display: block; place-items: initial; padding: 0; -webkit-overflow-scrolling: touch; }
+    .container { max-width: 920px; margin: 32px auto; padding: 20px; overflow: visible; box-sizing: border-box; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); box-sizing: border-box; }
+    .title { font-size: 22px; font-weight: 700; margin-bottom: 16px; }
+    form { display: grid; gap: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    label { display:block; font-size: 14px; color: #374151; margin-bottom: 6px; }
+    input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    input[type="file"] { width: 100%; box-sizing: border-box; }
+    .row { display:flex; align-items:center; gap: 12px; }
+    .hint { font-size: 12px; color: #6b7280; }
+    .media { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .media .box { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px; box-sizing: border-box; }
+    .media .preview { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
+    .hidden { display: none !important; }
+    .actions { display:flex; gap:10px; justify-content:flex-end; }
+    .btn { appearance:none; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; background:#111827; color:#fff; cursor:pointer; }
+    .btn.secondary { background:#fff; color:#111827; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .agreement { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
+    .agreement p { margin:0; font-size: 13px; line-height: 1.4; }
+
+    /* Header styles */
+    .form-header { 
+      border: 1px solid #fed7aa; 
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 24px; 
+      display: flex; 
+      align-items: center; 
+      gap: 16px;
+      box-shadow: 0 4px 12px rgba(251, 146, 60, 0.15);
+    }
+    .form-header .logo { 
+      width: 74px; 
+      height: 80px;
+      border-radius: 15%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+    .form-header .logo img {
+      width: 200%;
+      height: 160%;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 15%;
+    }
+    .form-header .content h1 { 
+      margin: 0; 
+      font-size: 32px; 
+      font-weight: 700; 
+      color: #9a3412; 
+      line-height: 1.2;
+    }
+    .form-header .content h2 { 
+      margin: 4px 0 0 0; 
+      font-size: 20px; 
+      font-weight: 500; 
+      color: #000000; 
+      line-height: 1.2;
+    }
+    @media (max-width: 640px) {
+      .form-header { 
+        padding: 16px; 
+        gap: 12px; 
+      }
+      .form-header .logo { 
+        width: 50px; 
+        height: 50px; 
+        font-size: 24px; 
+      }
+      .form-header .content h1 { 
+        font-size: 20px; 
+      }
+      .form-header .content h2 { 
+        font-size: 14px; 
+      }
+    }
+
+    /* Token chips row */
+    .tokens { display: grid; gap: 10px; }
+    .token-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .token-actions { display: flex; gap: 8px; }
+    .icon-btn { appearance:none; border:1px solid #e5e7eb; background:#fff; border-radius:10px; padding:10px 12px; cursor:pointer; min-width:44px; }
+    .icon-btn.add { background:#111827; color:#fff; }
+    .icon-btn.remove { background:#fff; color:#111827; }
+
+    /* Preview overlay clear button */
+    .preview-wrap { position: relative; }
+    .clear-btn { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 999px; border: 1px solid #e5e7eb; background:#fff; color:#111827; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+    .clear-btn:active { transform: scale(0.98); }
+
+    /* Better spacing and sizing */
+    .grid > div { 
+      min-width: 0; 
+    }
+    .tokens { 
+      width: 100%; 
+      box-sizing: border-box; 
+    }
+    .token-row { 
+      width: 100%; 
+      box-sizing: border-box; 
+    }
+    .token-input { 
+      min-width: 0; 
+      flex: 1; 
+    }
+
+    /* Mobile tweaks */
+    @media (max-width: 768px) {
+      .container { padding: 12px; margin: 16px auto; }
+      .media { grid-template-columns: 1fr; gap: 12px; }
+      .actions { flex-direction: column; }
+      .actions .btn { width: 100%; }
+      .token-row { grid-template-columns: 1fr 56px; gap: 8px; }
+      #cam { width: 100%; height: auto; aspect-ratio: 4 / 3; }
+      .media .preview { height: 160px; }
+      .grid { gap: 12px; }
+      .form-header .logo { 
+        width: 70px; 
+        height: 70px;
+      }
+      .form-header .logo img {
+        width: 150%;
+        height: 150%;
+        object-fit: cover;
+        object-position: center;
+      }
+      .form-header .content h1 { 
+        font-size: 25px; 
+      }
+      .form-header .content h2 { 
+        font-size: 17px; 
+      }
+    }
+  </style>
+</head>
+<body class="form-page">
+  <div class="container">
+    <div class="form-header">
+      <div class="logo"><img src="../asset/images/Logo.png" alt="Shree Datta Capital Logo" /></div>
+      <div class="content">
+        <h1>Shree Datta Capital</h1>
+        <h2>Gold Draw Agreement</h2>
+      </div>
+    </div>
+    <div class="card">
+      <form id="goldForm" method="post" enctype="multipart/form-data">
+        <div class="grid">
+          <div>
+            <label for="firstName">First name</label>
+            <input id="firstName" name="firstName" type="text" required />
+          </div>
+          <div>
+            <label for="lastName">Last name</label>
+            <input id="lastName" name="lastName" type="text" required />
+          </div>
+          <div>
+            <label for="token-0">Token number(s)</label>
+            <div class="tokens" id="tokens">
+              <div class="token-row">
+                <input id="token-0" class="token-input" type="text" placeholder="Enter token number" required />
+                <div class="token-actions">
+                  <button class="icon-btn add" id="addToken" type="button" aria-label="Add token">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="hint">Use + to add more token numbers.</div>
+          </div>
+          <div>
+            <label for="draw">Draw name</label>
+            <select id="draw" name="draw" required>
+              <option value="">Select a draw</option>
+              <option value="Diwali Special Draw 2024">Diwali Special Draw 2024</option>
+              <option value="New Year Gold Draw">New Year Gold Draw</option>
+              <option value="Festival Bonanza Draw">Festival Bonanza Draw</option>
+              <option value="Monthly Premium Draw">Monthly Premium Draw</option>
+              <option value="Anniversary Special Draw">Anniversary Special Draw</option>
+              <option value="Monsoon Lucky Draw">Monsoon Lucky Draw</option>
+              <option value="Summer Gold Rush">Summer Gold Rush</option>
+              <option value="Winter Wonder Draw">Winter Wonder Draw</option>
+            </select>
+          </div>
+          
+        </div>
+
+        <div class="media">
+          <div class="box">
+            <label>Live camera photo</label>
+            <div class="row">
+              <video id="cam" autoplay muted playsinline style="width:100%; border-radius:8px; background:#000; height:220px; object-fit:cover;"></video>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <button class="btn secondary" type="button" id="startCam">Start Camera</button>
+              <button class="btn" type="button" id="capture">Capture</button>
+            </div>
+            <div class="preview-wrap">
+              <img id="photoPreview" class="preview hidden" alt="Captured preview" />
+              <button id="clearPhoto" type="button" class="clear-btn hidden" aria-label="Clear captured photo">&times;</button>
+            </div>
+            <input type="hidden" id="photoData" name="photoData" />
+          </div>
+          <div class="box">
+            <label>Attach Aadhaar (front)</label>
+            <input id="aadFront" name="aadFront" type="file" accept="image/*" />
+            <img id="aadFrontPreview" class="preview hidden" alt="Aadhaar front preview" />
+            <div class="hint">Upload a clear photo of the front side.</div>
+          </div>
+          <div class="box">
+            <label>Attach Aadhaar (back)</label>
+            <input id="aadBack" name="aadBack" type="file" accept="image/*" />
+            <img id="aadBackPreview" class="preview hidden" alt="Aadhaar back preview" />
+            <div class="hint">Upload a clear photo of the back side.</div>
+          </div>
+        </div>
+
+        <!-- Language moved above agreement -->
+        <div class="grid">
+          <div>
+            <label for="lang">Agreement Language</label>
+            <select id="lang" name="lang" required>
+              <option value="en" selected>English</option>
+              <option value="hi">हिंदी</option>
+              <option value="mr">मराठी</option>
+            </select>
+          </div>
+          <input type="hidden" id="drawCategory" name="drawCategory" value="gold" />
+        </div>
+
+        <div class="media">
+          <div class="box agreement">
+            <label for="agree">Agreement</label>
+            <p id="agreementText"></p>
+            <div class="row" style="margin-top:8px;">
+              <input id="agree" type="checkbox" required />
+              <label for="agree">I agree</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="reset" class="btn secondary">Reset</button>
+          <button type="submit" class="btn" id="submitBtn" disabled>Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:#fff; border-radius:16px; padding:22px; max-width:520px; width:92%; box-shadow:0 18px 40px rgba(0,0,0,0.25); text-align:center;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+        <div style="width:64px; height:64px; border-radius:50%; background:#ecfdf5; display:flex; align-items:center; justify-content:center; color:#10b981;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        </div>
+        <h3 style="margin:0; font-size:22px;">Form submitted successfully</h3>
+        <p id="successMessage" style="margin:0; color:#374151; font-size:14px;"></p>
+        <div id="successMeta" style="margin-top:6px; color:#6b7280; font-size:13px;"></div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+        <a id="downloadPdfBtn" href="#" class="btn hidden" target="_blank" rel="noopener" role="button">Download PDF</a>
+        <button id="successClose" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Token decode (matches server algorithm) ----
+    function decodeIdFromToken(token) {
+      if (!token || token.length !== 10) return 0;
+      const lenChar = token.charAt(0);
+      if (lenChar < '0' || lenChar > '9') return 0;
+      const L = parseInt(lenChar, 10);
+      if (!L || L < 1 || L > 9) return 0;
+      const id62 = token.slice(10 - L);
+      const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+      const map = {};
+      for (let i = 0; i < alphabet.length; i++) map[alphabet[i]] = i;
+      let id = 0;
+      for (let i = 0; i < id62.length; i++) {
+        const ch = id62[i];
+        if (!(ch in map)) return 0;
+        id = id * 62 + map[ch];
+      }
+      return id >>> 0; // ensure positive int
+    }
+
+    // Keep remote languages to override static texts when available
+    let remoteLanguages = null;
+
+    const texts = {
+      en: `<strong>Terms and Conditions:</strong><br><br>
+1) To become a member of Shree Datta Capital's draw, it is mandatory to pay Rs. 2000/- membership fee and book your number.<br>
+2) It is necessary to complete the required documentation to become a member.<br>
+3) Your membership fee must be deposited 1 day before the draw.<br>
+4) Your membership fee should be sent in cash form or on the scanner sent in the group. Payments sent to any personal number will not be accepted, and your number will be removed.<br>
+5) You will not be able to exit the draw within 21 months. If you exit the draw for any reason within 21 months, your deposited amount will be received in the 22nd month after the draw is completed.<br>
+6) If you are sending your membership fee from another number, it is mandatory to write your name, token number and draw color along with it, otherwise your membership fee will be considered as not deposited and your number will be removed.<br>
+7) Please note that if you do not complete the 21 month draw period you will not get the benefit of 24 carat gold coin.<br>
+8) I,__NAME__, have read all the above terms and conditions and I agree to them.`,
+      hi: `<strong>नियम और शर्तें:</strong><br><br>
+1) श्री दत्त कैपिटल के ड्रॉ में सदस्य बनने के लिए रु. 2000/- सदस्यता शुल्क भरकर अपना नंबर बुक करना अनिवार्य है।<br>
+2) सदस्य बनने के लिए आवश्यक कागजात की पूर्ति करना आवश्यक है।<br>
+3) आपकी सदस्यता शुल्क ड्रॉ के 1 दिन पहले जमा करना अनिवार्य होगा।<br>
+4) आपकी सदस्यता शुल्क नकद रूप में या ग्रुप में भेजे गए स्कैनर पर भेजनी चाहिए, किसी भी व्यक्तिगत नंबर पर भेजी गई राशि स्वीकार नहीं की जाएगी, और आपका नंबर हटा दिया जाएगा।<br>
+5) आप 21 महीने की अवधि के भीतर ड्रॉ से बाहर नहीं निकल सकेंगे, यदि आप किसी भी कारण से 21 महीने की अवधि के भीतर ड्रॉ से बाहर निकलते हैं, तो आपकी जमा राशि ड्रॉ पूरा होने के बाद 22वें महीने में मिलेगी।<br>
+6) यदि आप अपनी सदस्यता शुल्क दूसरे नंबर से भेज रहे हैं, तो उसके साथ अपना नाम, टोकन नंबर और ड्रॉ कलर लिखना अनिवार्य है, अन्यथा आपकी सदस्यता शुल्क जमा नहीं हुई मानी जाएगी और आपका नंबर हटा दिया जाएगा।<br>
+7) कृपया ध्यान दें कि यदि आप ड्रॉ की 21 महीने की अवधि पूरी नहीं करते हैं तो आपको 24 कैरेट सोने के सिक्के का लाभ नहीं मिलेगा।<br>
+8) मैं,__NAME__, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।`,
+      mr: `<strong>नियम व अटी:</strong><br><br>
+1. श्री दत्त कॅपिटल च्या, ड्रॉ मध्ये सभासद होण्याकरिता रु. 2000/- सभासद फी भरून आपला नंबर बुक करणे बंधनकारक आहे.<br>
+2. सभासद होण्याकरिता आवश्यक कागदपत्रांची पुर्तता करणे गरजेचे आहे.<br>
+3.आपली सभासद फी ड्रॉ च्या 1 दिवस आधी जमा करणे बंधनकारक असेल.<br>
+4.आपली सभासद फी, कॅश स्वरूपात किंवा ग्रुप मध्ये पाठवलेल्या स्कॅनर वर च पाठवावी, कुठल्याही वैयक्तिक नंबर वर पाठवलेले ग्राह्य धरले जाणार नाहीत, आणि आपला नंबर बाजुला काढण्यात येईल.<br>
+5.आपणास 21 महिने कालावधी च्या आत ड्रॉ मधुन बाहेर पडता येणार नाही, आपण कुठल्याही कारणास्तव 21 महिने कालावधी च्या आत ड्रॉ मधुन बाहेर पडल्यास, आपली जमा रक्कम ड्रॉ पूर्ण झाल्यावर 22 व्या महिन्यात मिळेल.<br>
+6.आपण आपली सभासद फी दुसऱ्या नंबर वरून पाठवणार असल्यास, त्या सोबत आपले नाव, टोकन नंबर आणि ड्रॉ कलर, लिहून पाठवणे बंधनकारक आहे, अन्यथा आपली सभासद फी जमा झालेली नाही असे समजुन आपला नंबर बाजुला काढण्यात येईल.<br>
+7. जर आपण ड्रॉ चा 21 महिन्यांचा कालावधी पूर्ण केला नाही तर आपणास २४ कॅरेट सोन्याच्या नाण्याचा लाभ मिळणार नाही याची नोंद घ्यावी.<br>
+8.मी,__NAME__, सर्व अटी व शर्ती मी वाचल्या आहेत व त्या मला मान्य आहेत.`
+    };
+
+    // Build localized name for insertion in point 8
+    function getFullName() {
+      const f = (document.getElementById('firstName')?.value || '').trim();
+      const l = (document.getElementById('lastName')?.value || '').trim();
+      return `${f} ${l}`.trim();
+    }
+
+    // Simple English -> Devanagari transliteration for Hindi/Marathi
+    function transliterateName(name, lang) {
+      if (!name) return '';
+      if (lang === 'en') return name;
+      // Both hi and mr use Devanagari; this is a basic approximation
+      const map = {
+        'a':'अ','aa':'आ','i':'इ','ee':'ई','u':'उ','oo':'ऊ','e':'ए','ai':'ऐ','o':'ओ','au':'औ',
+        'ka':'क','kha':'ख','ga':'ग','gha':'घ','cha':'च','chha':'छ','ja':'ज','jha':'झ','ta':'ट','tha':'ठ','da':'ड','dha':'ढ','na':'न',
+        'pa':'प','pha':'फ','ba':'ब','bha':'भ','ma':'म','ya':'य','ra':'र','la':'ल','va':'व','sa':'स','sha':'श','ssa':'ष','ha':'ह',
+        'ka':'क','ga':'ग','ta':'त','da':'द'
+      };
+      // Extremely naive: replace common digraphs first
+      let s = name.toLowerCase();
+      const seq = ['chha','jha','tha','dha','sha','ssa','aa','ee','oo','ai','au'];
+      seq.forEach(k=>{ s = s.replaceAll(k, map[k]||k); });
+      // Then single letters
+      s = s.replaceAll('k', 'क').replaceAll('g','ग').replaceAll('c','क').replaceAll('j','ज')
+           .replaceAll('t','त').replaceAll('d','द').replaceAll('n','न').replaceAll('p','प')
+           .replaceAll('b','ब').replaceAll('m','म').replaceAll('y','य').replaceAll('r','र')
+           .replaceAll('l','ल').replaceAll('v','व').replaceAll('w','व').replaceAll('s','स')
+           .replaceAll('h','ह').replaceAll('a','अ').replaceAll('i','इ').replaceAll('u','उ')
+           .replaceAll('e','ए').replaceAll('o','ओ');
+      // Capitalize first letters roughly by copying original case where possible
+      const parts = s.split(/\s+/).map((part, idx) => part ? part[0] + part.slice(1) : part);
+      return parts.join(' ');
+    }
+
+    const langSel = document.getElementById('lang');
+    const agreementText = document.getElementById('agreementText');
+    const submitBtn = document.getElementById('submitBtn');
+    function setAgreement() {
+      const lang = langSel.value;
+      // Prefer remote config
+      let base = '';
+      if (remoteLanguages) {
+        if (lang === 'en') base = remoteLanguages.english || '';
+        else if (lang === 'hi') base = remoteLanguages.hindi || '';
+        else if (lang === 'mr') base = remoteLanguages.marathi || '';
+      }
+      if (!base) base = texts[lang] || texts.en;
+      const name = getFullName();
+      const nameLocalized = name;
+      agreementText.innerHTML = base.replaceAll('__NAME__', nameLocalized || '__NAME__');
+    }
+    setAgreement();
+    langSel.addEventListener('change', setAgreement);
+    // Also refresh when user types name
+    document.getElementById('firstName')?.addEventListener('input', setAgreement);
+    document.getElementById('lastName')?.addEventListener('input', setAgreement);
+
+    // Validation helpers
+    function formIsValid() {
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
+      const draw = document.getElementById('draw').value.trim();
+      const agreed = document.getElementById('agree').checked;
+      const tokenVals = Array.from(document.querySelectorAll('.token-input'))
+        .map(i => i.value.trim()).filter(Boolean);
+      const photo = document.getElementById('photoData').value.trim();
+      const af = document.getElementById('aadFront');
+      const ab = document.getElementById('aadBack');
+      const hasFront = af && af.files && af.files.length > 0;
+      const hasBack = ab && ab.files && ab.files.length > 0;
+      return first && last && draw && tokenVals.length > 0 && agreed && photo && hasFront && hasBack;
+    }
+
+    function updateSubmitState() {
+      submitBtn.disabled = !formIsValid();
+    }
+
+    // Initial state
+    updateSubmitState();
+
+    // Watch inputs and fields
+    document.getElementById('firstName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
+    document.getElementById('lastName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
+    document.getElementById('draw').addEventListener('input', updateSubmitState);
+    document.getElementById('agree').addEventListener('change', updateSubmitState);
+    document.getElementById('aadFront').addEventListener('change', updateSubmitState);
+    document.getElementById('aadBack').addEventListener('change', updateSubmitState);
+
+    // ---- Read token from URL, fetch form config, and populate UI ----
+    async function initFromToken() {
+      const qs = new URLSearchParams(location.search);
+      const token = (qs.get('token') || '').trim();
+      if (!token) return; // no token provided
+      const id = decodeIdFromToken(token);
+      if (!id) { console.warn('Invalid token'); return; }
+      try {
+        const res = await fetch(`/shreedatta-capital-web/admin/super/api/forms_get.php?id=${encodeURIComponent(id)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data || !data.ok || !data.form) { console.warn('Config fetch failed'); return; }
+        const form = data.form;
+        // Populate draw options from draw_names
+        const sel = document.getElementById('draw');
+        if (sel) {
+          // Keep placeholder, then add options
+          const existingFirst = sel.querySelector('option');
+          sel.innerHTML = '';
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'Select a draw';
+          sel.appendChild(placeholder);
+          if (Array.isArray(form.draw_names)) {
+            form.draw_names.forEach(n => {
+              const v = String(n || '').trim();
+              if (!v) return;
+              const opt = document.createElement('option');
+              opt.value = v; opt.textContent = v;
+              sel.appendChild(opt);
+            });
+          }
+        }
+        // Update header subtitle and page title from form_name
+        if (form.form_name) {
+          const subtitleEl = document.querySelector('.form-header .content h2');
+          if (subtitleEl) subtitleEl.textContent = String(form.form_name);
+          document.title = String(form.form_name) + ' - Shree Datta Capital';
+        }
+
+        // Store languages for agreement
+        if (form.languages && typeof form.languages === 'object') {
+          remoteLanguages = {
+            english: String(form.languages.english || ''),
+            hindi: String(form.languages.hindi || ''),
+            marathi: String(form.languages.marathi || ''),
+          };
+          setAgreement();
+        }
+      } catch (e) {
+        console.warn('Error loading form config', e);
+      }
+    }
+
+    // Kick off token-based init after DOM is ready section loaded
+    initFromToken();
+
+    // Success modal helpers
+    function showSuccess(info) {
+      const modal = document.getElementById('successModal');
+      const msgEl = document.getElementById('successMessage');
+      const metaEl = document.getElementById('successMeta');
+      const closeBtn = document.getElementById('successClose');
+      const dlBtn = document.getElementById('downloadPdfBtn');
+      const { userID, name, category, when, pdfUrl } = (typeof info === 'string') ? { userID: '', name: '', category: 'gold', when: '', pdfUrl: '' } : info || {};
+      // Do not show User ID in the modal
+      msgEl.textContent = 'Your response has been recorded.';
+      metaEl.textContent = [name ? `Name: ${name}` : '', category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '', when ? `Time: ${when}` : ''].filter(Boolean).join(' · ');
+      // Configure Download button
+      if (dlBtn) {
+        if (pdfUrl) {
+          dlBtn.href = pdfUrl;
+          dlBtn.classList.remove('hidden');
+        } else {
+          dlBtn.href = '#';
+          dlBtn.classList.add('hidden');
+        }
+      }
+      modal.classList.remove('hidden');
+      closeBtn.focus();
+      function hide() {
+        modal.classList.add('hidden');
+        document.removeEventListener('keydown', onKey);
+      }
+      function onKey(e) { if (e.key === 'Escape') hide(); }
+      document.addEventListener('keydown', onKey);
+      closeBtn.onclick = hide;
+    }
+
+    // Camera handling
+    const startCamBtn = document.getElementById('startCam');
+    const captureBtn = document.getElementById('capture');
+    const video = document.getElementById('cam');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoData = document.getElementById('photoData');
+    const clearPhotoBtn = document.getElementById('clearPhoto');
+    let stream;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        // Hide start button while camera is active; show capture
+        startCamBtn.style.display = 'none';
+        captureBtn.style.display = '';
+      } catch (e) {
+        alert('Unable to access camera: ' + e.message);
+      }
+    }
+    startCamBtn.addEventListener('click', startCamera);
+
+    captureBtn.addEventListener('click', async () => {
+      if (!stream) { alert('Start the camera first'); return; }
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      photoPreview.src = dataUrl;
+      photoPreview.classList.remove('hidden');
+      photoData.value = dataUrl;
+      // Hide capture, show clear button
+      captureBtn.style.display = 'none';
+      clearPhotoBtn.classList.remove('hidden');
+      // Also hide Start Camera after capture
+      startCamBtn.style.display = 'none';
+      // Hide live camera and stop stream
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      video.srcObject = null;
+      video.classList.add('hidden');
+      updateSubmitState();
+    });
+
+    // Clear captured photo and allow re-capture
+    clearPhotoBtn.addEventListener('click', () => {
+      photoPreview.src = '';
+      photoPreview.classList.add('hidden');
+      photoData.value = '';
+      clearPhotoBtn.classList.add('hidden');
+      captureBtn.style.display = '';
+      // Show Start Camera so user can re-open camera
+      startCamBtn.style.display = '';
+      // Keep video hidden until user explicitly starts camera again
+      video.srcObject = null;
+      video.classList.add('hidden');
+    });
+
+    function previewFile(inputEl, imgEl) {
+      inputEl.addEventListener('change', () => {
+        const f = inputEl.files && inputEl.files[0];
+        if (!f) { imgEl.src = ''; imgEl.classList.add('hidden'); return; }
+        const reader = new FileReader();
+        reader.onload = () => { imgEl.src = reader.result; imgEl.classList.remove('hidden'); };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    previewFile(document.getElementById('aadFront'), document.getElementById('aadFrontPreview'));
+    previewFile(document.getElementById('aadBack'), document.getElementById('aadBackPreview'));
+
+    // Add/remove token inputs
+    const tokensWrap = document.getElementById('tokens');
+    document.getElementById('addToken').addEventListener('click', () => {
+      const idx = tokensWrap.querySelectorAll('.token-row').length;
+      const row = document.createElement('div');
+      row.className = 'token-row';
+      row.innerHTML = `
+        <input id="token-${idx}" class="token-input" type="text" placeholder="Enter token number" />
+        <div class="token-actions">
+          <button class=\"icon-btn remove\" type=\"button\" aria-label=\"Remove token\">&times;</button>
+        </div>`;
+      tokensWrap.appendChild(row);
+      row.querySelector('.remove').addEventListener('click', () => { row.remove(); updateSubmitState(); });
+      row.querySelector('input').focus();
+      updateSubmitState();
+    });
+
+    // Delegate token input changes for dynamic rows
+    tokensWrap.addEventListener('input', (e) => {
+      if (e.target && e.target.classList.contains('token-input')) updateSubmitState();
+    });
+
+    // Submit handling: POST to backend API with FormData
+    document.getElementById('goldForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
+      const draw = document.getElementById('draw').value.trim();
+      const lang = document.getElementById('lang').value;
+      const agreed = document.getElementById('agree').checked;
+      const photoVal = document.getElementById('photoData').value.trim();
+      const fFront = document.getElementById('aadFront').files;
+      const fBack = document.getElementById('aadBack').files;
+      const tokenVals = Array.from(document.querySelectorAll('.token-input'))
+        .map(i => i.value.trim()).filter(Boolean);
+      if (!first || !last || !draw || !agreed || !photoVal || !fFront?.length || !fBack?.length || tokenVals.length === 0) {
+        alert('Please complete all required fields including tokens, photo and Aadhaar.');
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append('firstName', first);
+      fd.append('lastName', last);
+      fd.append('draw', draw);
+      fd.append('drawCategory', 'gold');
+      fd.append('lang', lang);
+      fd.append('agreementText', agreementText?.innerText || '');
+      fd.append('photoData', photoVal);
+      fd.append('aadFront', fFront[0]);
+      fd.append('aadBack', fBack[0]);
+      tokenVals.forEach(t => fd.append('tokens[]', t));
+
+      const btn = document.getElementById('submitBtn');
+      const prevText = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        const qsForSubmit = new URLSearchParams(location.search);
+        const submitToken = (qsForSubmit.get('token') || '').trim();
+        if (submitToken) fd.append('token', submitToken);
+        const res = await fetch('api/register.php?debug=1&v=' + Date.now() + (submitToken ? ('&token=' + encodeURIComponent(submitToken)) : ''), { method: 'POST', body: fd });
+        const responseText = await res.text();
+        console.log('Response status:', res.status, 'Response text:', responseText);
+        let data = {};
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('JSON parse error:', e, 'Raw response:', responseText);
+          throw new Error('Invalid server response: ' + responseText.substring(0, 100));
+        }
+        if (!res.ok || !data.ok) {
+          const msg = (data && data.error) ? data.error : 'Server error';
+          const det = (data && data.detail) ? ('\nDetails: ' + data.detail) : '';
+          throw new Error(msg + det);
+        }
+        const when = new Date().toLocaleString(undefined, { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:true });
+        showSuccess({ userID: data.userID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl });
+        e.target.reset();
+        setAgreement();
+        photoPreview.src = '';
+        photoPreview.classList.add('hidden');
+        clearPhotoBtn.classList.add('hidden');
+        captureBtn.style.display = '';
+        startCamBtn.style.display = '';
+        // Ensure camera is off and video hidden after submit
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        video.srcObject = null;
+        video.classList.add('hidden');
+        const afp = document.getElementById('aadFrontPreview');
+        const abp = document.getElementById('aadBackPreview');
+        afp.src = ''; afp.classList.add('hidden');
+        abp.src = ''; abp.classList.add('hidden');
+        // Reset tokens input to single row
+        const tokensWrap = document.getElementById('tokens');
+        tokensWrap.innerHTML = '';
+        const baseRow = document.createElement('div');
+        baseRow.className = 'token-row';
+        baseRow.innerHTML = `
+          <input id="token-0" class="token-input" type="text" placeholder="Enter token number" required />
+          <div class="token-actions">
+            <button class=\"icon-btn add\" id=\"addToken\" type=\"button\" aria-label=\"Add token\">+</button>
+          </div>`;
+        tokensWrap.appendChild(baseRow);
+        document.getElementById('addToken').addEventListener('click', () => {
+          const idx = tokensWrap.querySelectorAll('.token-row').length;
+          const row = document.createElement('div');
+          row.className = 'token-row';
+          row.innerHTML = `
+            <input id="token-${idx}" class="token-input" type="text" placeholder="Enter token number" />
+            <div class=\"token-actions\"> <button class=\"icon-btn remove\" type=\"button\">&times;</button> </div>`;
+          tokensWrap.appendChild(row);
+          row.querySelector('.remove').addEventListener('click', () => { row.remove(); updateSubmitState(); });
+          row.querySelector('input').focus();
+          updateSubmitState();
+        });
+        // After full reset, recompute submit state
+        updateSubmitState();
+      } catch (err) {
+        alert('Failed to submit: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = prevText;
+      }
+    });
+
+    // Re-evaluate on form reset
+    document.getElementById('goldForm').addEventListener('reset', () => {
+      setTimeout(() => { setAgreement(); updateSubmitState(); }, 0);
+    });
+
+    window.addEventListener('beforeunload', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });
+  </script>
+</body>
+</html>

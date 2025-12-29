@@ -17,14 +17,9 @@
       </div>
       <h1 class="title">shreedatta capital admin login</h1>
       <p class="subtitle">Please sign in with your administrator credentials.</p>
-      <p class="subtitle" style="margin-top:6px;color:#6b7280;">
-        Demo credentials — 
-        Admin: Username: <code>admin</code>, Password: <code>admin123</code><br>
-        Subadmin: Username: <code>subadmin</code>, Password: <code>subadmin123</code>
-      </p>
     </div>
 
-    <form id="loginForm" novalidate>
+    <form id="loginForm" action="/asset/db/login.php" method="post" novalidate>
       <div class="field">
         <label for="username">Username</label>
         <div class="input">
@@ -44,7 +39,7 @@
 
       <div class="actions">
         <label class="remember">
-          <input type="checkbox" id="remember" /> Remember me
+          <input type="checkbox" id="remember" name="remember" value="1" /> Remember me
         </label>
         <button class="btn btn-primary" type="submit">Sign in</button>
       </div>

@@ -796,83 +796,184 @@
         });
       };
 
-      // Create category
-      window.createCategory = () => {
-        // Clear previous errors
-        clearErrors();
-        
-        let hasError = false;
-        
-        // Validate category name
-        const name = document.getElementById('categoryName').value.trim();
-        if (!name) {
-          showError('categoryNameError', 'categoryName');
-          hasError = true;
-        }
+      // ---- Backend wiring for forms_aggri ----
+      const getCategoryParam = () => {
+        const p = new URLSearchParams(location.search);
+        return (p.get('name') || '').trim();
+      };
 
-        // Validate dropdown options
-        const optionInputs = document.querySelectorAll('.option-input');
-        const options = Array.from(optionInputs)
-          .map(input => input.value.trim())
-          .filter(value => value !== '');
-        
-        if (options.length === 0) {
-          showError('optionsError', 'dropdownOptions');
-          // Find the parent field element for dropdown options
-          const dropdownField = document.getElementById('dropdownOptions').closest('.field');
-          if (dropdownField) {
-            dropdownField.classList.add('error');
+      const renderFormsTable = (forms) => {
+        const tbody = document.getElementById('tableBody');
+        const empty = document.getElementById('noResults');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        const list = Array.isArray(forms) ? forms : [];
+        if (list.length === 0) {
+          if (empty) empty.style.display = '';
+          return;
+        }
+        if (empty) empty.style.display = 'none';
+        const frag = document.createDocumentFragment();
+        list.forEach(f => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input type="checkbox" class="row-checkbox" /></td>
+            <td>${(f.form_name || '').replace(/</g,'&lt;')}</td>
+            <td>${getCategoryParam().replace(/</g,'&lt;')}</td>
+            <td>${new Date().toLocaleString()}</td>
+            <td class="action-icons">
+              <button type="button" class="action-btn edit" disabled>Edit</button>
+              <button type="button" class="action-btn delete" disabled>Delete</button>
+            </td>`;
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+      };
+
+      const renderFormCards = (forms) => {
+        const grid = document.getElementById('su-grid');
+        if (!grid) return;
+        // Clear and rebuild keeping the plus card last
+        grid.innerHTML = '';
+        const list = Array.isArray(forms) ? forms : [];
+        list.forEach(f => {
+          const card = document.createElement('div');
+          card.className = 'cat-card';
+          const title = (f.form_name || '').trim() || 'Untitled';
+          const token = (f.form_link || '').trim();
+          const fullUrl = token ? `${location.origin}/shreedatta-capital-web/form/?token=${encodeURIComponent(token)}` : '';
+          card.innerHTML = `
+            <div class="cat-header">
+              <div class="cat-name">${title.replace(/</g,'&lt;')}</div>
+              <div class="cat-count">${(Array.isArray(f.draw_names) ? f.draw_names.length : 0)}</div>
+            </div>
+            <div class="cat-link-container">
+              <a class="cat-link" href="${fullUrl || '#'}" title="Form link" ${fullUrl ? 'target="_blank" rel="noopener"' : ''}>${fullUrl ? fullUrl.replace(/</g,'&lt;') : 'https://example.com/link'}</a>
+              <button class="copy-btn" type="button" title="Copy link" onclick="navigator.clipboard.writeText('${fullUrl.replace(/'/g,"&#39;")}').catch(()=>{})">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2M16 8h2a2 2 0 012 2v8a2 2 0 01-2 2H10a2 2 0 01-2-2v-2" /></svg>
+              </button>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+        // Plus card at end
+        const plus = document.createElement('div');
+        plus.className = 'cat-card add-card';
+        plus.id = 'plusCard';
+        plus.title = 'Add new item';
+        plus.innerHTML = '<div class="add-plus">+</div>';
+        plus.addEventListener('click', openAddCategoryModal);
+        grid.appendChild(plus);
+      };
+
+      const loadForms = async () => {
+        const name = getCategoryParam();
+        if (!name) return;
+        try {
+          const res = await fetch(`/shreedatta-capital-web/admin/super/api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data && data.ok && Array.isArray(data.forms)) {
+            renderFormsTable(data.forms);
+            renderFormCards(data.forms);
+          } else {
+            renderFormsTable([]);
+            renderFormCards([]);
           }
-          hasError = true;
+        } catch (_) {
+          renderFormsTable([]);
+          renderFormCards([]);
         }
+      };
 
-        // Validate rules
+      window.createCategory = async () => {
+        // Collect fields
+        const categoryName = document.getElementById('categoryName').value.trim();
+        const optionInputs = document.querySelectorAll('#dropdownOptions .option-input');
+        const options = Array.from(optionInputs).map(i => i.value.trim()).filter(Boolean);
         const englishRules = document.getElementById('englishRules').value.trim();
         const hindiRules = document.getElementById('hindiRules').value.trim();
         const marathiRules = document.getElementById('marathiRules').value.trim();
 
-        if (!englishRules) {
-          showError('englishRulesError', 'englishRules');
-          hasError = true;
+        // Basic validation
+        let ok = true;
+        const show = (id, cond) => { const el = document.getElementById(id); if (el) el.classList[cond ? 'add' : 'remove']('show'); };
+        show('categoryNameError', !categoryName);
+        show('optionsError', options.length === 0);
+        show('englishRulesError', !englishRules);
+        show('hindiRulesError', !hindiRules);
+        show('marathiRulesError', !marathiRules);
+        if (!categoryName || options.length === 0 || !englishRules || !hindiRules || !marathiRules) return;
+
+        // Build payload per spec
+        const fd = new FormData();
+        fd.append('category', getCategoryParam());
+        fd.append('form_name', categoryName); // Category Name -> form_name
+        options.forEach(o => fd.append('draw_names[]', o)); // Dropdown Options as JSON array
+        fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
+        // Optional link support later
+        // fd.append('form_link', '');
+
+        const btn = document.querySelector('#addCategoryModal .btn.btn-primary');
+        const prev = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+        try {
+          const res = await fetch('/shreedatta-capital-web/admin/super/api/forms_create.php', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            alert((data && data.error) ? data.error : 'Failed to create');
+            return;
+          }
+          closeAddCategoryModal();
+          await loadForms();
+        } catch (e) {
+          alert('Network error. Please try again.');
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = prev || 'Create'; }
         }
-
-        if (!hindiRules) {
-          showError('hindiRulesError', 'hindiRules');
-          hasError = true;
-        }
-
-        if (!marathiRules) {
-          showError('marathiRulesError', 'marathiRules');
-          hasError = true;
-        }
-
-        // If there are errors, don't proceed
-        if (hasError) return;
-
-        // Create category object
-        const category = {
-          id: Date.now().toString(),
-          name: name,
-          options: options,
-          rules: {
-            english: englishRules,
-            hindi: hindiRules,
-            marathi: marathiRules
-          },
-          count: 0
-        };
-
-        // Save category
-        const categories = getCategories();
-        categories.push(category);
-        saveCategories(categories);
-
-        // Re-render grid and filters, close modal
-        renderCategories();
-        renderFilters();
-        renderTable();
-        closeAddCategoryModal();
       };
+
+      // Hook plus card
+      const plus = document.getElementById('plusCard');
+      if (plus) plus.addEventListener('click', openAddCategoryModal);
+
+      // Initial load
+      loadForms();
+
+      // ---- Static filter chips under the grid ----
+      const renderStaticFilters = () => {
+        const row = document.getElementById('filterRow');
+        if (!row) return;
+        row.innerHTML = '';
+        const chips = [
+          { label: 'All', href: './index.html' },
+          { label: 'Gold', href: `./category.html?name=Gold` },
+          { label: 'Cash', href: `./category.html?name=Cash` },
+          { label: 'Bike', href: `./category.html?name=Bike` },
+          { label: 'Car', href: `./category.html?name=Car` },
+        ];
+        const active = getCategoryParam();
+        chips.forEach(ch => {
+          const b = document.createElement('a');
+          b.className = 'filter-chip';
+          b.textContent = ch.label;
+          b.href = ch.href;
+          if (active && ch.label.toLowerCase() === active.toLowerCase()) {
+            b.classList.add('active');
+          }
+          if (!active && ch.label === 'All') {
+            b.classList.add('active');
+          }
+          row.appendChild(b);
+        });
+      };
+
+      renderStaticFilters();
+
+      
 
       // Error handling functions
       const clearErrors = () => {
