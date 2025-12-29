@@ -448,16 +448,6 @@
           categories = []; 
         }
         
-        // If no categories exist, add sample categories that match the sample data
-        if (categories.length === 0) {
-          categories = [
-            { id: '1', name: 'Gold', count: 2 },
-            { id: '2', name: 'Cash', count: 1 },
-            { id: '3', name: 'Bike', count: 1 },
-            { id: '4', name: 'Car', count: 1 }
-          ];
-          saveCategories(categories);
-        }
         
         return categories;
       };
@@ -724,7 +714,7 @@
 
         saveCategories(categories);
         renderCategories();
-        renderFilters();
+        renderFilters([]); // Pass empty array since we're not dealing with forms here
         renderTable();
         closeEditCategoryModal();
       };
@@ -738,7 +728,7 @@
         saveCategories(filteredCategories);
         
         renderCategories();
-        renderFilters();
+        renderFilters([]); // Pass empty array since we're not dealing with forms here
         renderTable();
         closeDeleteModal();
       };
@@ -873,15 +863,16 @@
           const res = await fetch(`/shreedatta-capital-web/admin/super/api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
           const data = await res.json().catch(() => ({}));
           if (res.ok && data && data.ok && Array.isArray(data.forms)) {
-            renderFormsTable(data.forms);
+            // Render form cards and filters with subcategory data
             renderFormCards(data.forms);
+            renderFilters(data.forms); // Pass forms data to show subcategory filters
           } else {
-            renderFormsTable([]);
             renderFormCards([]);
+            renderFilters([]); // Pass empty array for filters
           }
         } catch (_) {
-          renderFormsTable([]);
           renderFormCards([]);
+          renderFilters([]);
         }
       };
 
@@ -928,7 +919,7 @@
             return;
           }
           closeAddCategoryModal();
-          await loadForms();
+          await loadForms(); // This will now update both cards and filters
         } catch (e) {
           alert('Network error. Please try again.');
         } finally {
@@ -950,10 +941,6 @@
         row.innerHTML = '';
         const chips = [
           { label: 'All', href: './index.html' },
-          { label: 'Gold', href: `./category.html?name=Gold` },
-          { label: 'Cash', href: `./category.html?name=Cash` },
-          { label: 'Bike', href: `./category.html?name=Bike` },
-          { label: 'Car', href: `./category.html?name=Car` },
         ];
         const active = getCategoryParam();
         chips.forEach(ch => {
@@ -1003,25 +990,17 @@
         }
       };
 
-      // Load sample data for table
-      const getSampleUsers = () => {
-        return [
-          { id: 1, username: 'john_doe', category: 'Gold', dateTime: '2024-01-15 10:30 AM' },
-          { id: 2, username: 'jane_smith', category: 'Cash', dateTime: '2024-01-15 11:45 AM' },
-          { id: 3, username: 'mike_wilson', category: 'Bike', dateTime: '2024-01-15 02:20 PM' },
-          { id: 4, username: 'sarah_jones', category: 'Car', dateTime: '2024-01-15 03:15 PM' },
-          { id: 5, username: 'alex_brown', category: 'Gold', dateTime: '2024-01-16 09:00 AM' }
-        ];
-      };
+   
 
-      let sampleUsers = getSampleUsers();
+    
       let activeFilters = new Set(['All']); // Set "All" as active by default
       let searchQuery = '';
 
-      // Render filters
-      const renderFilters = () => {
-        const categories = getCategories();
+      // Render filters with subcategory names
+      const renderFilters = (forms = []) => {
         const filterRow = document.getElementById('filterRow');
+        if (!filterRow) return;
+        
         filterRow.innerHTML = '';
 
         // Add "All" filter
@@ -1031,14 +1010,18 @@
         allFilter.onclick = () => toggleFilter('All');
         filterRow.appendChild(allFilter);
 
-        // Add category filters
-        categories.forEach(category => {
-          const filter = document.createElement('button');
-          filter.className = 'filter-chip';
-          filter.textContent = category.name;
-          filter.onclick = () => toggleFilter(category.name);
-          filterRow.appendChild(filter);
-        });
+        // Add subcategory filters from forms data
+        if (forms && forms.length > 0) {
+          forms.forEach(form => {
+            if (form.form_name) {
+              const filter = document.createElement('button');
+              filter.className = 'filter-chip';
+              filter.textContent = form.form_name; // This will show "Gold 1k", "Gold 2k", etc.
+              filter.onclick = () => toggleFilter(form.form_name);
+              filterRow.appendChild(filter);
+            }
+          });
+        }
 
         updateFilterUI();
       };
@@ -1054,7 +1037,7 @@
           activeFilters.add(categoryName);
         }
         updateFilterUI();
-        renderTable();
+        renderTable(); // This is now async but will work fine
       };
 
       // Update filter UI
@@ -1069,58 +1052,164 @@
         });
       };
 
-      // Render table
-      const renderTable = () => {
+      // Render table with real user data from all-submissions database table
+      const renderTable = async () => {
         const tableBody = document.getElementById('tableBody');
         const noResults = document.getElementById('noResults');
         
-        // Filter data
-        let filteredUsers = sampleUsers.filter(user => {
-          const matchesSearch = user.username.toLowerCase().includes(searchQuery.toLowerCase());
-          const matchesFilter = activeFilters.has('All') || activeFilters.has(user.category);
-          return matchesSearch && matchesFilter;
-        });
-
-        // Clear table
-        tableBody.innerHTML = '';
-
-        if (filteredUsers.length === 0) {
+        console.log('renderTable called'); // Debug log
+        
+        try {
+          // Get current category from URL
+          const currentCategory = getCategoryParam();
+          console.log('Current category:', currentCategory); // Debug log
+          
+          // Fetch real user data from all-submissions table with category filter
+          const apiUrl = `/shreedatta-capital-web/admin/super/api/get_submissions.php${currentCategory ? `?category=${encodeURIComponent(currentCategory)}` : ''}`;
+          console.log('API URL:', apiUrl); // Debug log
+          
+          const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            }
+          });
+          
+          console.log('API response status:', response.status); // Debug log
+          
+          // Handle network/server errors gracefully
+          if (!response.ok) {
+            console.log('Response not OK:', response.status); // Debug log
+            // If it's a 404 or similar, treat as no data available
+            if (response.status === 404 || response.status === 500) {
+              tableBody.innerHTML = '';
+              noResults.style.display = 'block';
+              noResults.textContent = 'No user submissions available at the moment.';
+              return;
+            }
+          }
+          
+          const data = await response.json().catch(() => null);
+          console.log('API data received:', data); // Debug log
+          
+          // Handle JSON parsing errors or invalid responses
+          if (!data) {
+            console.log('No data received'); // Debug log
+            tableBody.innerHTML = '';
+            noResults.style.display = 'block';
+            noResults.textContent = 'No user submissions available at the moment.';
+            return;
+          }
+          
+          // Handle API errors gracefully
+          if (!data.success) {
+            console.log('API returned success=false'); // Debug log
+            tableBody.innerHTML = '';
+            noResults.style.display = 'block';
+            noResults.textContent = 'No user submissions available at the moment.';
+            return;
+          }
+          
+          let submissions = data.submissions || [];
+          console.log('Submissions array:', submissions); // Debug log
+          
+          // Handle null or empty submissions
+          if (!submissions || submissions.length === 0) {
+            console.log('No submissions found'); // Debug log
+            tableBody.innerHTML = '';
+            noResults.style.display = 'block';
+            noResults.textContent = 'No user submissions found. When users submit forms, they will appear here.';
+            return;
+          }
+          
+          // Apply search filter
+          if (searchQuery) {
+            submissions = submissions.filter(submission => {
+              const fullName = `${submission.first_name || ''} ${submission.last_name || ''}`.toLowerCase();
+              const drawName = (submission.draw_name || '').toLowerCase();
+              const categoryName = (submission.category_name || '').toLowerCase();
+              return fullName.includes(searchQuery.toLowerCase()) || 
+                     drawName.includes(searchQuery.toLowerCase()) ||
+                     categoryName.includes(searchQuery.toLowerCase());
+            });
+          }
+          
+          // Apply category filter - now works with form names from forms_aggri table
+          if (!activeFilters.has('All')) {
+            submissions = submissions.filter(submission => {
+              // Check if the submission's category_name matches any active filter
+              const categoryName = submission.category_name || '';
+              const drawName = submission.draw_name || '';
+              
+              // Check if any active filter matches the category_name or draw_name
+              return Array.from(activeFilters).some(filter => 
+                categoryName.toLowerCase().includes(filter.toLowerCase()) ||
+                drawName.toLowerCase().includes(filter.toLowerCase())
+              );
+            });
+          }
+          
+          // Clear table
+          tableBody.innerHTML = '';
+          
+          if (submissions.length === 0) {
+            noResults.style.display = 'block';
+            if (searchQuery) {
+              noResults.textContent = 'No submissions found matching your search criteria.';
+            } else if (!activeFilters.has('All')) {
+              noResults.textContent = 'No submissions found for the selected category filter.';
+            } else {
+              noResults.textContent = 'No user submissions found.';
+            }
+            return;
+          }
+          
+          console.log('Rendering', submissions.length, 'submissions'); // Debug log
+          noResults.style.display = 'none';
+          
+          // Add rows with real user data
+          submissions.forEach(submission => {
+            const row = document.createElement('tr');
+            const fullName = `${submission.first_name || ''} ${submission.last_name || ''}`.trim();
+            const category = submission.category_name || 'N/A'; // Use category_name from JOIN
+            const dateTime = submission.date_time ? new Date(submission.date_time).toLocaleString() : 'N/A';
+            
+            row.innerHTML = `
+              <td><input type="checkbox" class="row-checkbox" data-user-id="${submission.id || ''}" onchange="handleCheckboxChange()"></td>
+              <td>${fullName || 'N/A'}</td>
+              <td>${category}</td>
+              <td>${dateTime}</td>
+              <td>
+                <div class="action-icons">
+                  <button class="icon-btn-sm" onclick="viewUser(${submission.id || 0})" title="View">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button class="icon-btn-sm" onclick="deleteUser(${submission.id || 0})" title="Delete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3,6 5,6 21,6"></polyline>
+                      <path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path>
+                      <path d="m10,11 0,6"></path>
+                      <path d="m14,11 0,6"></path>
+                      <path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+          
+        } catch (error) {
+          // Handle all other errors gracefully - don't show technical error messages
+          console.error('Error fetching submissions:', error);
+          tableBody.innerHTML = '';
           noResults.style.display = 'block';
-          return;
+          noResults.textContent = 'No user submissions available at the moment.';
         }
-
-        noResults.style.display = 'none';
-
-        // Add rows
-        filteredUsers.forEach(user => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td><input type="checkbox" class="row-checkbox" data-user-id="${user.id}" onchange="handleCheckboxChange()"></td>
-            <td>${user.username}</td>
-            <td>${user.category}</td>
-            <td>${user.dateTime}</td>
-            <td>
-              <div class="action-icons">
-                <button class="icon-btn-sm" onclick="viewUser(${user.id})" title="View">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-                <button class="icon-btn-sm" onclick="deleteUser(${user.id})" title="Delete">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3,6 5,6 21,6"></polyline>
-                    <path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path>
-                    <path d="m10,11 0,6"></path>
-                    <path d="m14,11 0,6"></path>
-                    <path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path>
-                  </svg>
-                </button>
-              </div>
-            </td>
-          `;
-          tableBody.appendChild(row);
-        });
       };
 
       // Search functionality
@@ -1128,7 +1217,7 @@
         const searchBar = document.getElementById('searchBar');
         searchBar.addEventListener('input', (e) => {
           searchQuery = e.target.value;
-          renderTable();
+          renderTable(); // This is now async but will work fine
         });
       };
 
@@ -1389,31 +1478,12 @@
         });
       }
 
-      // Download functionality
+      // Download functionality - disabled since we're not showing sample data
       window.downloadSelected = () => {
-        const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-        const selectedUserIds = Array.from(checkboxes).map(cb => cb.dataset.userId);
-        const selectedUsers = sampleUsers.filter(user => selectedUserIds.includes(String(user.id)));
-        
-        // Create CSV content
-        const csvContent = [
-          ['Username', 'Category', 'Date and Time'],
-          ...selectedUsers.map(user => [user.username, user.category, user.dateTime])
-        ].map(row => row.join(',')).join('\n');
-        
-        // Create and download file
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `selected_users_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        // Clear selections after download
-        clearAllSelections();
+        // Since we're no longer showing sample user data in the table,
+        // this function is disabled. In the future, this should download
+        // actual user submission data when that feature is implemented.
+        alert('Download functionality will be available when user submission data is integrated.');
       };
 
       const clearAllSelections = () => {
@@ -1429,7 +1499,7 @@
 
       // Initial render
       renderCategories();
-      renderFilters();
+      renderFilters([]); // Will be updated when loadForms() completes
       renderTable();
       setupSearch();
       
