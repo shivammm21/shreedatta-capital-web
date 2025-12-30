@@ -86,9 +86,29 @@ try {
 
     $pdo->beginTransaction();
     try {
+        // Look up parent category id (forms_data.id) from forms_aggri.catogory_id
+        $formDataId = 0;
+        try {
+            $q = $pdo->prepare('SELECT `catogory_id` FROM `forms_aggri` WHERE `id` = ? LIMIT 1');
+            $q->execute([$formsAggriId]);
+            $row = $q->fetch();
+            if ($row && isset($row['catogory_id'])) {
+                $formDataId = (int)$row['catogory_id'];
+            }
+        } catch (Throwable $eLookup) {
+            // If lookup fails, keep $formDataId as 0 and continue
+        }
+
         // Insert into `all-submissions` (note: hyphenated table name) including `language` column
-        $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
-        $ins->execute([$formsAggriId, $first, $last, $lang, $tokenNo, $draw]);
+        // Prefer inserting `form_data_id` as well; fall back if column is missing
+        try {
+            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `form_data_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $ins->execute([$formsAggriId, $formDataId, $first, $last, $lang, $tokenNo, $draw]);
+        } catch (Throwable $eInsertWithCat) {
+            // Fallback: legacy schema without form_data_id
+            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
+            $ins->execute([$formsAggriId, $first, $last, $lang, $tokenNo, $draw]);
+        }
         $userId = (int)$pdo->lastInsertId();
 
         // Insert docs (handle possible column name typos in schema)

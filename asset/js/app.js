@@ -444,6 +444,10 @@ if (dashboardRoot) {
     if (addCatInput) addCatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(lastRenderedCounts || {}); } });
 
     let lastRenderedCounts = null;
+    // Map normalized category name -> forms_data.id
+    let catIdMap = {};
+    // Server-provided total users (rows in `all-submissions`). If null, UI falls back to derived sum
+    let serverTotalUsers = null;
 
     const openRenameCategoryModal = (key) => {
       pendingRenameKey = key;
@@ -529,8 +533,9 @@ if (dashboardRoot) {
       if (!suGrid) return;
       const entries = Object.entries(countsObj || {})
         .filter(([k]) => k); // ignore empty
-      const total = entries.reduce((acc, [,v]) => acc + Number(v||0), 0);
-      if (suTotal) suTotal.textContent = String(total);
+      const derivedTotal = entries.reduce((acc, [,v]) => acc + Number(v||0), 0);
+      const totalUsersToShow = (serverTotalUsers != null) ? serverTotalUsers : derivedTotal;
+      if (suTotal) suTotal.textContent = String(totalUsersToShow);
       if (suCategories) suCategories.textContent = String(entries.length);
       lastRenderedCounts = { ...countsObj };
       const frag = document.createDocumentFragment();
@@ -593,7 +598,8 @@ if (dashboardRoot) {
           if (ev.target.closest('.cat-actions')) return;
           // If we're already in /admin/super/, link to ./category.html; otherwise compute relative path
           const inSuper = location.pathname.includes('/admin/super/');
-          const href = inSuper ? `category.html?name=${encodeURIComponent(key)}` : `/admin/super/category.html?name=${encodeURIComponent(key)}`;
+          const cid = catIdMap && catIdMap[key] ? `&category_id=${encodeURIComponent(String(catIdMap[key]))}` : '';
+          const href = inSuper ? `category.html?name=${encodeURIComponent(key)}${cid}` : `/admin/super/category.html?name=${encodeURIComponent(key)}${cid}`;
           window.location.href = href;
         });
         card.append(actions, name, count);
@@ -693,12 +699,35 @@ if (dashboardRoot) {
             const data = await res.json().catch(() => ({}));
             if (res.ok && data && Array.isArray(data.categories)) {
               merged = { ...merged };
-              data.categories.forEach(name => {
+              // data.categories may be array of strings (old) or objects {id,name,sub_count} (new)
+              catIdMap = {};
+              data.categories.forEach(item => {
+                const name = typeof item === 'string' ? item : (item && item.name) || '';
+                const id = typeof item === 'object' && item ? Number(item.id) : undefined;
+                const subCount = typeof item === 'object' && item && item.sub_count != null ? Number(item.sub_count) : undefined;
                 const key = normalizeCat(name);
-                if (key && !(key in merged)) merged[key] = 0; // show with count 0 if no users
+                if (!key) return;
+                if (id && !Number.isNaN(id)) { catIdMap[key] = id; }
+                // Use backend-provided sub_count as the number on each main container
+                if (subCount != null && !Number.isNaN(subCount)) {
+                  merged[key] = subCount;
+                } else if (!(key in merged)) {
+                  merged[key] = 0;
+                }
               });
             }
           } catch (_) { /* ignore */ }
+
+          // Also fetch total users (rows in all-submissions) for header badge
+          try {
+            const subsRes = await fetch('/shreedatta-capital-web/admin/super/api/get_submissions.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+            const subsData = await subsRes.json().catch(() => ({}));
+            if (subsRes.ok && subsData && subsData.success && typeof subsData.count === 'number') {
+              serverTotalUsers = subsData.count;
+            } else {
+              serverTotalUsers = null;
+            }
+          } catch (_) { serverTotalUsers = null; }
         }
         renderSuperGrid(merged);
       } catch (e) {

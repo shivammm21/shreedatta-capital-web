@@ -325,6 +325,36 @@
     </div>
   </div>
 
+  <!-- Sub-Container Rename Modal -->
+  <div id="subRenameModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="subRenameTitle">
+    <div class="modal-box">
+      <button type="button" class="modal-close-btn" onclick="closeSubRenameModal()" title="Close">×</button>
+      <div id="subRenameTitle" class="modal-title">Rename Container</div>
+      <div class="field">
+        <label for="subRenameInput">New name</label>
+        <input id="subRenameInput" type="text" placeholder="Enter new container name">
+        <div class="error-message" id="subRenameError">Name is required</div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeSubRenameModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitSubRename()">Update</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub-Container Delete Modal -->
+  <div id="subDeleteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="subDeleteTitle">
+    <div class="modal-box">
+      <button type="button" class="modal-close-btn" onclick="closeSubDeleteModal()" title="Close">×</button>
+      <div id="subDeleteTitle" class="modal-title">Delete Container</div>
+      <p class="modal-text">This will permanently delete the container and all of its user submissions. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeSubDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" style="background:#dc2626;" onclick="confirmSubDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Delete Confirmation Modal -->
   <div id="deleteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
     <div class="modal-box">
@@ -450,6 +480,72 @@
         
         
         return categories;
+      };
+
+      // Sub-container rename/delete modal logic
+      let activeSubFormId = null;
+      window.openSubRenameModal = (formId, currentName) => {
+        activeSubFormId = formId;
+        const m = document.getElementById('subRenameModal');
+        const i = document.getElementById('subRenameInput');
+        const e = document.getElementById('subRenameError');
+        if (m && i) {
+          i.value = currentName || '';
+          if (e) e.classList.remove('show');
+          m.classList.remove('hidden');
+          setTimeout(() => i.focus(), 0);
+        }
+      };
+      window.closeSubRenameModal = () => {
+        const m = document.getElementById('subRenameModal');
+        if (m) m.classList.add('hidden');
+        activeSubFormId = null;
+      };
+      window.submitSubRename = async () => {
+        const i = document.getElementById('subRenameInput');
+        const e = document.getElementById('subRenameError');
+        const name = (i?.value || '').trim();
+        if (!name) { if (e) e.classList.add('show'); return; }
+        try {
+          const fd = new FormData();
+          fd.append('form_id', String(activeSubFormId));
+          fd.append('form_name', name);
+          const res = await fetch('/shreedatta-capital-web/admin/super/api/form_rename.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            alert((data && data.error) ? data.error : 'Failed to rename');
+            return;
+          }
+          closeSubRenameModal();
+          await loadForms();
+          await renderTable();
+        } catch (_) { alert('Network error. Please try again.'); }
+      };
+
+      window.openSubDeleteModal = (formId, currentName) => {
+        activeSubFormId = formId;
+        const m = document.getElementById('subDeleteModal');
+        if (m) m.classList.remove('hidden');
+      };
+      window.closeSubDeleteModal = () => {
+        const m = document.getElementById('subDeleteModal');
+        if (m) m.classList.add('hidden');
+        activeSubFormId = null;
+      };
+      window.confirmSubDelete = async () => {
+        try {
+          const fd = new FormData();
+          fd.append('form_id', String(activeSubFormId));
+          const res = await fetch('/shreedatta-capital-web/admin/super/api/form_delete.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            alert((data && data.error) ? data.error : 'Failed to delete');
+            return;
+          }
+          closeSubDeleteModal();
+          await loadForms();
+          await renderTable();
+        } catch (_) { alert('Network error. Please try again.'); }
       };
       const saveCategories = (cats) => {
         try { localStorage.setItem('categories', JSON.stringify(cats)); } catch {}
@@ -791,6 +887,11 @@
         const p = new URLSearchParams(location.search);
         return (p.get('name') || '').trim();
       };
+      const getCategoryIdParam = () => {
+        const p = new URLSearchParams(location.search);
+        const id = parseInt(p.get('category_id') || '0', 10);
+        return Number.isFinite(id) && id > 0 ? id : 0;
+      };
 
       const renderFormsTable = (forms) => {
         const tbody = document.getElementById('tableBody');
@@ -820,7 +921,7 @@
         tbody.appendChild(frag);
       };
 
-      const renderFormCards = (forms) => {
+      const renderFormCards = (forms, countsByFormId = {}) => {
         const grid = document.getElementById('su-grid');
         if (!grid) return;
         // Clear and rebuild keeping the plus card last
@@ -832,10 +933,20 @@
           const title = (f.form_name || '').trim() || 'Untitled';
           const token = (f.form_link || '').trim();
           const fullUrl = token ? `${location.origin}/shreedatta-capital-web/form/?token=${encodeURIComponent(token)}` : '';
+          const thisFormId = Number(f.id || 0);
+          const countVal = (countsByFormId && thisFormId) ? Number(countsByFormId[thisFormId] || 0) : 0;
           card.innerHTML = `
+            <div class="cat-actions" style="position:absolute; top:8px; right:8px; display:flex; gap:6px;">
+              <button class="icon-btn-sm" title="Rename" aria-label="Rename" onclick="window.openSubRenameModal(${thisFormId}, '${title.replace(/'/g,"&#39;")}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </button>
+              <button class="icon-btn-sm" title="Delete" aria-label="Delete" onclick="window.openSubDeleteModal(${thisFormId}, '${title.replace(/'/g,"&#39;")}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"></polyline><path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path><path d="m10,11 0,6"></path><path d="m14,11 0,6"></path><path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path></svg>
+              </button>
+            </div>
             <div class="cat-header">
               <div class="cat-name">${title.replace(/</g,'&lt;')}</div>
-              <div class="cat-count">${(Array.isArray(f.draw_names) ? f.draw_names.length : 0)}</div>
+              <div class="cat-count">${countVal}</div>
             </div>
             <div class="cat-link-container">
               <a class="cat-link" href="${fullUrl || '#'}" title="Form link" ${fullUrl ? 'target="_blank" rel="noopener"' : ''}>${fullUrl ? fullUrl.replace(/</g,'&lt;') : 'https://example.com/link'}</a>
@@ -863,8 +974,26 @@
           const res = await fetch(`/shreedatta-capital-web/admin/super/api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
           const data = await res.json().catch(() => ({}));
           if (res.ok && data && data.ok && Array.isArray(data.forms)) {
-            // Render form cards and filters with subcategory data
-            renderFormCards(data.forms);
+            // Also fetch submissions for this main category to compute accurate counts per form
+            const cid = getCategoryIdParam();
+            const qs = new URLSearchParams();
+            if (name) qs.set('category', name);
+            if (cid) qs.set('category_id', String(cid));
+            let countsByFormId = {};
+            try {
+              const subsRes = await fetch(`./api/get_submissions.php${qs.toString() ? `?${qs.toString()}` : ''}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+              const subsData = await subsRes.json().catch(() => ({}));
+              if (subsRes.ok && subsData && subsData.success && Array.isArray(subsData.submissions)) {
+                subsData.submissions.forEach(s => {
+                  const fid = Number(s.forms_aggri_id || 0);
+                  if (!fid) return;
+                  countsByFormId[fid] = (countsByFormId[fid] || 0) + 1;
+                });
+              }
+            } catch (_) { /* ignore */ }
+
+            // Render form cards and filters with accurate counts
+            renderFormCards(data.forms, countsByFormId);
             renderFilters(data.forms); // Pass forms data to show subcategory filters
           } else {
             renderFormCards([]);
@@ -1064,9 +1193,12 @@
           const currentCategory = getCategoryParam();
           console.log('Current category:', currentCategory); // Debug log
           
-          // Fetch real user data. If the UI has 'All' selected, do not filter by category on the server.
-          const shouldFilterByCategory = currentCategory && !activeFilters.has('All');
-          const apiUrl = `./api/get_submissions.php${shouldFilterByCategory ? `?category=${encodeURIComponent(currentCategory)}` : ''}`;
+          // Always filter on the server by main category from the URL; pass both name and numeric ID (if available)
+          const cid = getCategoryIdParam();
+          const qs = new URLSearchParams();
+          if (currentCategory) qs.set('category', currentCategory);
+          if (cid) qs.set('category_id', String(cid));
+          const apiUrl = `./api/get_submissions.php${qs.toString() ? `?${qs.toString()}` : ''}`;
           console.log('API URL:', apiUrl); // Debug log
           
           const response = await fetch(apiUrl, {

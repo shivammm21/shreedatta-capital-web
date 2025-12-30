@@ -14,17 +14,32 @@ try {
 
     require_once __DIR__ . '/../db.php'; // $pdo
 
-    $names = [];
+    $items = [];
     try {
-        $stmt = $pdo->query('SELECT `category` AS name FROM `forms_data` WHERE `category` IS NOT NULL AND TRIM(`category`) <> ""');
+        $stmt = $pdo->query('SELECT `id`, `category` AS name FROM `forms_data` WHERE `category` IS NOT NULL AND TRIM(`category`) <> ""');
         while ($row = $stmt->fetch()) {
-            $names[] = (string)$row['name'];
+            // Count sub forms for this main category
+            $cnt = 0;
+            try {
+                $cStmt = $pdo->prepare('SELECT COUNT(*) AS c FROM `forms_aggri` WHERE `catogory_id` = ?');
+                $cStmt->execute([$row['id']]);
+                $cRow = $cStmt->fetch();
+                if ($cRow && isset($cRow['c'])) $cnt = (int)$cRow['c'];
+            } catch (Throwable $eCnt) { $cnt = 0; }
+            $items[] = [ 'id' => (int)$row['id'], 'name' => (string)$row['name'], 'sub_count' => $cnt ];
         }
     } catch (Throwable $e1) {
         try {
-            $stmt2 = $pdo->query('SELECT `catogory` AS name FROM `forms_data` WHERE `catogory` IS NOT NULL AND TRIM(`catogory`) <> ""');
+            $stmt2 = $pdo->query('SELECT `id`, `catogory` AS name FROM `forms_data` WHERE `catogory` IS NOT NULL AND TRIM(`catogory`) <> ""');
             while ($row2 = $stmt2->fetch()) {
-                $names[] = (string)$row2['name'];
+                $cnt = 0;
+                try {
+                    $cStmt = $pdo->prepare('SELECT COUNT(*) AS c FROM `forms_aggri` WHERE `catogory_id` = ?');
+                    $cStmt->execute([$row2['id']]);
+                    $cRow = $cStmt->fetch();
+                    if ($cRow && isset($cRow['c'])) $cnt = (int)$cRow['c'];
+                } catch (Throwable $eCnt2) { $cnt = 0; }
+                $items[] = [ 'id' => (int)$row2['id'], 'name' => (string)$row2['name'], 'sub_count' => $cnt ];
             }
         } catch (Throwable $e2) {
             http_response_code(500);
@@ -33,14 +48,14 @@ try {
         }
     }
 
-    // Unique, trimmed, preserve order
+    // Unique by lowercase name, preserve order
     $clean = [];
     $seen = [];
-    foreach ($names as $n) {
-        $t = trim($n);
+    foreach ($items as $it) {
+        $t = trim((string)($it['name'] ?? ''));
         if ($t === '') continue;
         $k = mb_strtolower($t);
-        if (!isset($seen[$k])) { $seen[$k] = true; $clean[] = $t; }
+        if (!isset($seen[$k])) { $seen[$k] = true; $clean[] = [ 'id' => (int)$it['id'], 'name' => $t, 'sub_count' => (int)($it['sub_count'] ?? 0) ]; }
     }
 
     echo json_encode(['ok' => true, 'categories' => $clean]);
