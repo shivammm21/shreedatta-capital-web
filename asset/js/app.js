@@ -579,14 +579,58 @@ if (dashboardRoot) {
               confirmCancelBtn.removeEventListener('click', onCancel);
               confirmDeleteBtn.removeEventListener('click', onConfirm);
             };
-            const onConfirm = () => {
-              const updated = { ...countsObj };
-              delete updated[key];
-              // remove from custom categories as well
-              const custom = loadCustomCategories().filter(c => normalizeCat(c) !== key);
-              saveCustomCategories(custom);
-              renderSuperGrid(updated);
-              onCancel();
+            const onConfirm = async () => {
+              try {
+                const inSuper = location.pathname.includes('/admin/super/');
+                const catId = (catIdMap && catIdMap[key]) ? Number(catIdMap[key]) : 0;
+                if (inSuper && catId > 0) {
+                  const fd = new FormData();
+                  fd.append('category_id', String(catId));
+                  const res = await fetch('/shreedatta-capital-web/admin/super/api/category_delete.php', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok || !data || data.ok !== true) {
+                    alert((data && data.error) ? data.error : 'Failed to delete category');
+                  }
+                }
+              } catch (_) { /* ignore errors and proceed to refresh UI */ }
+              finally {
+                // Try to refresh from server to reflect latest counts and categories
+                try {
+                  const res2 = await fetch('/shreedatta-capital-web/admin/super/api/category_list.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                  const data2 = await res2.json().catch(() => ({}));
+                  if (res2.ok && data2 && Array.isArray(data2.categories)) {
+                    const merged = {};
+                    catIdMap = {};
+                    data2.categories.forEach(item => {
+                      const name = typeof item === 'string' ? item : (item && item.name) || '';
+                      const id = typeof item === 'object' && item ? Number(item.id) : undefined;
+                      const subCount = typeof item === 'object' && item && item.sub_count != null ? Number(item.sub_count) : 0;
+                      const k = normalizeCat(name);
+                      if (!k) return;
+                      if (id && !Number.isNaN(id)) { catIdMap[k] = id; }
+                      merged[k] = subCount;
+                    });
+                    renderSuperGrid(merged);
+                  } else {
+                    const updated = { ...countsObj };
+                    delete updated[key];
+                    const custom = loadCustomCategories().filter(c => normalizeCat(c) !== key);
+                    saveCustomCategories(custom);
+                    renderSuperGrid(updated);
+                  }
+                } catch (_) {
+                  const updated = { ...countsObj };
+                  delete updated[key];
+                  const custom = loadCustomCategories().filter(c => normalizeCat(c) !== key);
+                  saveCustomCategories(custom);
+                  renderSuperGrid(updated);
+                }
+                onCancel();
+              }
             };
             confirmCancelBtn.addEventListener('click', onCancel, { once: true });
             confirmDeleteBtn.addEventListener('click', onConfirm, { once: true });
