@@ -575,7 +575,7 @@
       let editingFormId = null;
       window.openSubEditModal = async (formId) => {
         try {
-          const res = await fetch(`/api/forms_get.php?id=${encodeURIComponent(formId)}`, { headers: { 'Accept':'application/json' }, cache: 'no-store' });
+          const res = await fetch(`./api/forms_get.php?id=${encodeURIComponent(formId)}`, { headers: { 'Accept':'application/json' }, cache: 'no-store' });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data || data.ok !== true || !data.form) { alert('Failed to load form'); return; }
           const form = data.form;
@@ -629,7 +629,7 @@
             fd.append('form_name', name);
             fd.append('draw_names', JSON.stringify(options));
             fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
-            const res = await fetch('/api/form_update.php', { method:'POST', headers:{ 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' }, body: fd });
+            const res = await fetch('./api/form_update.php', { method:'POST', headers:{ 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' }, body: fd });
             const data = await res.json().catch(()=>({}));
             if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
             // Close and refresh
@@ -671,7 +671,7 @@
           const fd = new FormData();
           fd.append('form_id', String(activeSubFormId));
           fd.append('form_name', name);
-          const res = await fetch('/api/form_rename.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const res = await fetch('./api/form_rename.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data || data.ok !== true) {
             alert((data && data.error) ? data.error : 'Failed to rename');
@@ -697,7 +697,7 @@
         try {
           const fd = new FormData();
           fd.append('form_id', String(activeSubFormId));
-          const res = await fetch('/api/form_delete.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const res = await fetch('./api/form_delete.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data || data.ok !== true) {
             alert((data && data.error) ? data.error : 'Failed to delete');
@@ -957,7 +957,7 @@
             fd.append('form_name', name);
             fd.append('draw_names', JSON.stringify(options));
             fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
-            const res = await fetch('/api/form_update.php', { method:'POST', headers: { 'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: fd });
+            const res = await fetch('./api/form_update.php', { method:'POST', headers: { 'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: fd });
             const data = await res.json().catch(()=>({}));
             if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
             editingFormId = null;
@@ -1137,7 +1137,7 @@
         const name = getCategoryParam();
         if (!name) return;
         try {
-          const res = await fetch(`/api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+          const res = await fetch(`./api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
           const data = await res.json().catch(() => ({}));
           if (res.ok && data && data.ok && Array.isArray(data.forms)) {
             // Also fetch submissions for this main category to compute accurate counts per form
@@ -1203,7 +1203,7 @@
         const prev = btn ? btn.textContent : '';
         if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
         try {
-          const res = await fetch('/api/forms_create.php', {
+          const res = await fetch('./api/forms_create.php', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: fd,
