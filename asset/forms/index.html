@@ -396,7 +396,10 @@
     document.getElementById('aadBack').addEventListener('change', updateSubmitState);
 
     // If opened via /link.php, we receive ?t=<token>. Show the encrypted URL box.
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token') || urlParams.get('t') || '';
     
+    console.log('URL Token:', urlToken);
 
     // Success modal helpers
     function showSuccess(info) {
@@ -409,16 +412,25 @@
       // Do not show User ID in the modal
       msgEl.textContent = 'Your response has been recorded.';
       metaEl.textContent = [name ? `Name: ${name}` : '', category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '', when ? `Time: ${when}` : ''].filter(Boolean).join(' · ');
-      // Configure Download button
+      
+      // Configure Download button - always show and make functional
       if (dlBtn) {
-        if (pdfUrl) {
-          dlBtn.href = pdfUrl;
-          dlBtn.classList.remove('hidden');
-        } else {
-          dlBtn.href = '#';
-          dlBtn.classList.add('hidden');
-        }
+        // Always show the download button
+        dlBtn.classList.remove('hidden');
+        dlBtn.href = '#';
+        dlBtn.onclick = (e) => {
+          e.preventDefault();
+          // Download the template PDF
+          const downloadUrl = `api/download_template.php?user_id=${userID || 1}`;
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `submission_${userID || 'template'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
       }
+      
       modal.classList.remove('hidden');
       closeBtn.focus();
       function hide() {
@@ -557,12 +569,19 @@
       fd.append('aadFront', fFront[0]);
       fd.append('aadBack', fBack[0]);
       tokenVals.forEach(t => fd.append('tokens[]', t));
+      
+      // Add URL token if available
+      if (urlToken) {
+        fd.append('token', urlToken);
+      }
 
       const btn = document.getElementById('submitBtn');
       const prevText = btn.textContent;
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('api/register.php?debug=1&v=' + Date.now(), { method: 'POST', body: fd });
+        // Include token in the API URL
+        const apiUrl = urlToken ? `api/register.php?debug=1&token=${urlToken}&v=${Date.now()}` : `api/register.php?debug=1&v=${Date.now()}`;
+        const res = await fetch(apiUrl, { method: 'POST', body: fd });
         const responseText = await res.text();
         console.log('Response status:', res.status, 'Response text:', responseText);
         let data = {};
