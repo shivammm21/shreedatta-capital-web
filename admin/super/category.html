@@ -482,6 +482,78 @@
         return categories;
       };
 
+      // ----- Sub-container Edit Flow -----
+      let editingFormId = null;
+      window.openSubEditModal = async (formId) => {
+        try {
+          const res = await fetch(`/shreedatta-capital-web/admin/super/api/forms_get.php?id=${encodeURIComponent(formId)}`, { headers: { 'Accept':'application/json' }, cache: 'no-store' });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true || !data.form) { alert('Failed to load form'); return; }
+          const form = data.form;
+          editingFormId = Number(form.id || 0);
+          const modal = document.getElementById('editCategoryModal');
+          if (modal) modal.classList.remove('hidden');
+          // Populate fields
+          document.getElementById('editCategoryName').value = form.form_name || '';
+          // Terms
+          const langs = form.languages || { english:'', hindi:'', marathi:'' };
+          document.getElementById('editEnglishRules').value = langs.english || '';
+          document.getElementById('editHindiRules').value = langs.hindi || '';
+          document.getElementById('editMarathiRules').value = langs.marathi || '';
+          // Options
+          const container = document.getElementById('editDropdownOptions');
+          container.innerHTML = '';
+          const arr = Array.isArray(form.draw_names) ? form.draw_names : [];
+          if (arr.length === 0) {
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.innerHTML = `<input type="text" class="option-input" placeholder="Enter option">`;
+            container.appendChild(row);
+          } else {
+            arr.forEach((option, index) => {
+              const row = document.createElement('div');
+              row.className = 'option-row';
+              const removeButton = index >= 1 ? `<button type="button" class="remove-btn" onclick="removeEditOption(this)">×</button>` : '';
+              row.innerHTML = `<input type="text" class="option-input" value="${(option||'').replace(/"/g,'&quot;')}" placeholder="Enter option">${removeButton}`;
+              container.appendChild(row);
+            });
+          }
+        } catch (_) { alert('Network error. Please try again.'); }
+      };
+
+      // Override update to handle sub-container updates when editingFormId is set
+      const originalUpdateCategory = window.updateCategory;
+      window.updateCategory = async () => {
+        if (editingFormId) {
+          // Collect fields
+          const name = document.getElementById('editCategoryName').value.trim();
+          const optionInputs = document.querySelectorAll('#editDropdownOptions .option-input');
+          const options = Array.from(optionInputs).map(i => i.value.trim()).filter(Boolean);
+          const englishRules = document.getElementById('editEnglishRules').value.trim();
+          const hindiRules = document.getElementById('editHindiRules').value.trim();
+          const marathiRules = document.getElementById('editMarathiRules').value.trim();
+          // Basic validation (at least name)
+          if (!name) { alert('Name is required'); return; }
+          try {
+            const fd = new FormData();
+            fd.append('form_id', String(editingFormId));
+            fd.append('form_name', name);
+            fd.append('draw_names', JSON.stringify(options));
+            fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
+            const res = await fetch('/shreedatta-capital-web/admin/super/api/form_update.php', { method:'POST', headers:{ 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' }, body: fd });
+            const data = await res.json().catch(()=>({}));
+            if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
+            // Close and refresh
+            editingFormId = null;
+            closeEditCategoryModal();
+            await loadForms();
+            await renderTable();
+          } catch (_) { alert('Network error. Please try again.'); }
+        } else if (typeof originalUpdateCategory === 'function') {
+          // Fallback to any existing behavior
+          return originalUpdateCategory();
+        }
+      };
       // Sub-container rename/delete modal logic
       let activeSubFormId = null;
       window.openSubRenameModal = (formId, currentName) => {
@@ -774,43 +846,56 @@
       };
 
       // Update category
-      window.updateCategory = () => {
+      window.updateCategory = async () => {
         const name = document.getElementById('editCategoryName').value.trim();
-        if (!name) {
-          alert('Please enter a category name');
-          return;
-        }
+        if (!name) { alert('Please enter a category name'); return; }
 
-        const categories = getCategories();
-        const categoryIndex = categories.findIndex(c => c.id === editingCategoryId);
-        if (categoryIndex === -1) return;
-
-        // Get dropdown options
+        // Gather common fields
         const optionInputs = document.querySelectorAll('#editDropdownOptions .option-input');
-        const options = Array.from(optionInputs)
-          .map(input => input.value.trim())
-          .filter(value => value !== '');
-
-        // Get rules
+        const options = Array.from(optionInputs).map(input => input.value.trim()).filter(v => v !== '');
         const englishRules = document.getElementById('editEnglishRules').value.trim();
         const hindiRules = document.getElementById('editHindiRules').value.trim();
         const marathiRules = document.getElementById('editMarathiRules').value.trim();
 
-        // Update category
+        // If editing a DB sub-container (forms_aggri)
+        if (typeof editingFormId === 'number' && editingFormId > 0) {
+          const btn = document.querySelector('#editCategoryModal .btn.btn-primary');
+          const prevText = btn ? btn.textContent : '';
+          try {
+            if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+            const fd = new FormData();
+            fd.append('form_id', String(editingFormId));
+            fd.append('form_name', name);
+            fd.append('draw_names', JSON.stringify(options));
+            fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
+            const res = await fetch('/shreedatta-capital-web/admin/super/api/form_update.php', { method:'POST', headers: { 'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: fd });
+            const data = await res.json().catch(()=>({}));
+            if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
+            editingFormId = null;
+            closeEditCategoryModal();
+            await loadForms();
+            await renderTable();
+          } catch (_) {
+            alert('Network error. Please try again.');
+          } finally {
+            if (btn) { btn.disabled = false; btn.textContent = prevText || 'Update'; }
+          }
+          return;
+        }
+
+        // Legacy local edit path (kept for completeness)
+        const categories = getCategories();
+        const categoryIndex = categories.findIndex(c => c.id === editingCategoryId);
+        if (categoryIndex === -1) return;
         categories[categoryIndex] = {
           ...categories[categoryIndex],
-          name: name,
-          options: options,
-          rules: {
-            english: englishRules,
-            hindi: hindiRules,
-            marathi: marathiRules
-          }
+          name,
+          options,
+          rules: { english: englishRules, hindi: hindiRules, marathi: marathiRules }
         };
-
         saveCategories(categories);
         renderCategories();
-        renderFilters([]); // Pass empty array since we're not dealing with forms here
+        renderFilters([]);
         renderTable();
         closeEditCategoryModal();
       };
@@ -937,7 +1022,7 @@
           const countVal = (countsByFormId && thisFormId) ? Number(countsByFormId[thisFormId] || 0) : 0;
           card.innerHTML = `
             <div class="cat-actions" style="position:absolute; top:8px; right:8px; display:flex; gap:6px;">
-              <button class="icon-btn-sm" title="Rename" aria-label="Rename" onclick="window.openSubRenameModal(${thisFormId}, '${title.replace(/'/g,"&#39;")}')">
+              <button class="icon-btn-sm" title="Edit" aria-label="Edit" onclick="window.openSubEditModal(${thisFormId})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
               </button>
               <button class="icon-btn-sm" title="Delete" aria-label="Delete" onclick="window.openSubDeleteModal(${thisFormId}, '${title.replace(/'/g,"&#39;")}')">

@@ -81,9 +81,9 @@ try {
     
     // Add static 10th rule based on language
     $staticRule10 = [
-        'english' => "10) I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
-        'hindi' => "10) मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-        'marathi' => "10) मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        'english' => "I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
+        'hindi' => "मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+        'marathi' => "मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
     ];
     
     // Add section titles in different languages
