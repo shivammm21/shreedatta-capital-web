@@ -1,11 +1,10 @@
 <?php
-// admin/sub/auth.php
+// admin/sub/auth.php — session gate for SUB admin
 session_start();
 header('Content-Type: application/json');
 
 $u = isset($_SESSION['user']) ? $_SESSION['user'] : null;
-$role = strtoupper((string)($u['type'] ?? ''));
-if (!$u || empty($u['logged_in']) || !in_array($role, ['SUB','SUBADMIN','SUB-ADMIN'], true)) {
+if (!$u || empty($u['logged_in']) || strtoupper($u['type'] ?? '') !== 'SUB') {
     http_response_code(401);
     echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
     exit;

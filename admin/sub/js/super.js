@@ -2,7 +2,7 @@
 // Enforce PHP-session auth for SUPER admin, and wire logout to PHP endpoint
 (async () => {
   try {
-    const res = await fetch('/admin/super/auth.php', {
+    const res = await fetch('/../auth.php', {
       headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       cache: 'no-store'
     });
@@ -16,7 +16,7 @@
       // title.textContent = `Welcome, ${data.user.username}`;
     }
   } catch (_) {
-    window.location.replace('/index.html');
+    window.location.replace('/../../../index.html');
     return;
   }
 

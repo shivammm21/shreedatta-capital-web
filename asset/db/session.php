@@ -11,11 +11,11 @@ if (!$user || empty($user['logged_in'])) {
 }
 
 $role = strtoupper((string)($user['type'] ?? ''));
-$redirect = '/shreedatta-capital-web/index.html';
+$redirect = '/index.html';
 if ($role === 'SUPER') {
-    $redirect = '/shreedatta-capital-web/admin/super/index.html';
+    $redirect = '/admin/super/index.html';
 } else if ($role === 'SUB' || $role === 'SUBADMIN' || $role === 'SUB-ADMIN') {
-    $redirect = '/shreedatta-capital-web/admin/sub/index.html';
+    $redirect = '/admin/sub/index.html';
 }
 
 echo json_encode([

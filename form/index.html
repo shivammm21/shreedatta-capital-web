@@ -404,7 +404,7 @@
         .replace(/[^A-Za-z0-9_-]+/g, '-')
         .replace(/-{2,}/g, '-')
         .replace(/^-+|-+$/g, '');
-      return `/shreedatta-capital-web/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
+      return `/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
     }
 
     // Validation helpers
@@ -446,7 +446,7 @@
       const id = decodeIdFromToken(token);
       if (!id) { console.warn('Invalid token'); return; }
       try {
-        const res = await fetch(`/shreedatta-capital-web/admin/super/api/forms_get.php?id=${encodeURIComponent(id)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+        const res = await fetch(`/admin/super/api/forms_get.php?id=${encodeURIComponent(id)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data || !data.ok || !data.form) { console.warn('Config fetch failed'); return; }
         const form = data.form;

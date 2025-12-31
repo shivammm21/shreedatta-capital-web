@@ -18,10 +18,12 @@ const form = document.getElementById('loginForm');
 if (form) {
   (async () => {
     try {
-      const res = await fetch('/shreedatta-capital-web/asset/db/session.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+      const res = await fetch('asset/db/session.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data && data.ok && data.redirect) {
-        window.location.href = data.redirect;
+        let r = data.redirect;
+        if (typeof r === 'string' && r.startsWith('/')) r = r.slice(1);
+        window.location.href = r;
         return;
       }
     } catch (_) { /* ignore */ }
@@ -37,7 +39,7 @@ if (form) {
 
     try {
       const fd = new FormData(form);
-      const res = await fetch('/shreedatta-capital-web/asset/db/login.php?ajax=1', {
+      const res = await fetch('asset/db/login.php?ajax=1', {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: fd,
@@ -48,7 +50,8 @@ if (form) {
         if (errorEl) errorEl.textContent = msg;
         return;
       }
-      const redirect = data.redirect || '/shreedatta-capital-web/admin/super/index.php';
+      let redirect = data.redirect || 'admin/super/index.php';
+      if (typeof redirect === 'string' && redirect.startsWith('/')) redirect = redirect.slice(1);
       window.location.href = redirect;
     } catch (err) {
       if (errorEl) errorEl.textContent = 'Network error. Please try again.';
@@ -61,10 +64,11 @@ if (form) {
 // Dashboard guard and interactions
 const dashboardRoot = document.getElementById('dashboard');
 if (dashboardRoot) {
-  // Server-side PHP handles authentication; assume SUPER admin for UI controls
-  const isAuthed = true;
-  const getUserRole = 'admin';
-  const isAdmin = true;
+  // Determine which dashboard we are on
+  const inSuper = location.pathname.includes('/admin/super/');
+  const inSub = location.pathname.includes('/admin/sub/');
+  // Only SUPER can add/edit/delete categories from UI; SUB is read-only
+  const isAdmin = inSuper;
   
   // Wire up logout with confirmation
     const logoutBtn = document.getElementById('logout');
@@ -158,8 +162,12 @@ if (dashboardRoot) {
       return new Date(Number(Y), Number(M)-1, Number(D), Number(h), Number(i), Number(sec||'0'));
     };
 
-    // Detect root prefix when running under /admin/super/
-    const getRootPrefix = () => (location.pathname.includes('/admin/super/') ? '../../' : '');
+    // Detect root prefix when running under /admin/super/ or /admin/sub/
+    const getRootPrefix = () => (
+      location.pathname.includes('/admin/super/') || location.pathname.includes('/admin/sub/')
+        ? '../../'
+        : ''
+    );
 
     // Load users + counts from static JSON
     const getUsers = async () => {
@@ -188,7 +196,7 @@ if (dashboardRoot) {
       // Create safe filename: firstName_lastName_drawName.pdf
       const safeName = u.name.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_{2,}/g, '_').trim('_');
       const safeDraw = u.drawName ? u.drawName.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/-{2,}/g, '-').trim('-') : u.form.toLowerCase();
-      return `/shreedatta-capital-web/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
+      return `/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
     };
 
     const formatDT = (dt) => {
@@ -410,7 +418,7 @@ if (dashboardRoot) {
         try {
           const fd = new FormData();
           fd.append('name', name.trim());
-          const res = await fetch('/shreedatta-capital-web/admin/super/api/category_add.php', {
+          const res = await fetch('/admin/super/api/category_add.php', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: fd,
@@ -499,7 +507,7 @@ if (dashboardRoot) {
           const fd = new FormData();
           fd.append('old', key);
           fd.append('new', newName.trim());
-          const res = await fetch('/shreedatta-capital-web/admin/super/api/category_rename.php', {
+          const res = await fetch('/admin/super/api/category_rename.php', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: fd,
@@ -586,7 +594,7 @@ if (dashboardRoot) {
                 if (inSuper && catId > 0) {
                   const fd = new FormData();
                   fd.append('category_id', String(catId));
-                  const res = await fetch('/shreedatta-capital-web/admin/super/api/category_delete.php', {
+                  const res = await fetch('/admin/super/api/category_delete.php', {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     body: fd,
@@ -600,7 +608,7 @@ if (dashboardRoot) {
               finally {
                 // Try to refresh from server to reflect latest counts and categories
                 try {
-                  const res2 = await fetch('/shreedatta-capital-web/admin/super/api/category_list.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                  const res2 = await fetch('/admin/super/api/category_list.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
                   const data2 = await res2.json().catch(() => ({}));
                   if (res2.ok && data2 && Array.isArray(data2.categories)) {
                     const merged = {};
@@ -640,10 +648,17 @@ if (dashboardRoot) {
         // clicking the card navigates to category page (except on action buttons)
         card.addEventListener('click', (ev) => {
           if (ev.target.closest('.cat-actions')) return;
-          // If we're already in /admin/super/, link to ./category.html; otherwise compute relative path
           const inSuper = location.pathname.includes('/admin/super/');
+          const inSub = location.pathname.includes('/admin/sub/');
           const cid = catIdMap && catIdMap[key] ? `&category_id=${encodeURIComponent(String(catIdMap[key]))}` : '';
-          const href = inSuper ? `category.html?name=${encodeURIComponent(key)}${cid}` : `/admin/super/category.html?name=${encodeURIComponent(key)}${cid}`;
+          let href;
+          if (inSuper || inSub) {
+            // Use relative navigation within the current admin area
+            href = `category.html?name=${encodeURIComponent(key)}${cid}`;
+          } else {
+            // Fallback (should not happen in normal flow)
+            href = `/admin/super/category.html?name=${encodeURIComponent(key)}${cid}`;
+          }
           window.location.href = href;
         });
         card.append(actions, name, count);
@@ -693,7 +708,7 @@ if (dashboardRoot) {
             try {
               const fd = new FormData();
               fd.append('user_id', String(pendingDeleteUserId));
-              const res = await fetch('/shreedatta-capital-web/admin/super/api/user_delete.php', {
+              const res = await fetch('/admin/super/api/user_delete.php', {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 body: fd,
@@ -738,7 +753,7 @@ if (dashboardRoot) {
     if (logoutModal) logoutModal.addEventListener('click', (e) => { if (e.target === logoutModal) closeLogoutConfirm(); });
     if (logoutConfirmBtn) {
       logoutConfirmBtn.addEventListener('click', async () => {
-        window.location.href = '/shreedatta-capital-web/asset/db/logout.php';
+        window.location.href = '/asset/db/logout.php';
       });
     }
 
@@ -754,11 +769,13 @@ if (dashboardRoot) {
         renderStats(counts);
         // Build and render super grid with plus card
         let merged = buildCategoryCounts(users, counts);
-        // If we are in SUPER dashboard, also load categories from DB and merge
-        const inSuper = location.pathname.includes('/admin/super/');
-        if (inSuper) {
+        // If we are in SUPER or SUB dashboard, also load categories from DB and merge
+        if (inSuper || inSub) {
           try {
-            const res = await fetch('/shreedatta-capital-web/admin/super/api/category_list.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+            const endpoint = inSuper
+              ? '/admin/super/api/category_list.php'
+              : '/admin/sub/api/category_list.php';
+            const res = await fetch(endpoint, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data && Array.isArray(data.categories)) {
               merged = { ...merged };
@@ -781,9 +798,9 @@ if (dashboardRoot) {
             }
           } catch (_) { /* ignore */ }
 
-          // Also fetch total users (rows in all-submissions) for header badge
+          // Also fetch total users (rows in all-submissions) for header badge (SUPER only)
           try {
-            const subsRes = await fetch('/shreedatta-capital-web/admin/super/api/get_submissions.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+            const subsRes = await fetch('/admin/super/api/get_submissions.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
             const subsData = await subsRes.json().catch(() => ({}));
             if (subsRes.ok && subsData && subsData.success && typeof subsData.count === 'number') {
               serverTotalUsers = subsData.count;

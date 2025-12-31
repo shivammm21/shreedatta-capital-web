@@ -27,15 +27,16 @@ if ($username === '' || $password === '') {
         echo json_encode(['ok' => false, 'error' => 'Username and password are required.']);
         exit;
     } else {
-        header('Location: /shreedatta-capital-web/index.html?error=1');
+        header('Location: /index.html?error=1');
         exit;
     }
 }
 
 try {
-    // Fetch user by username
-    $stmt = $pdo->prepare('SELECT id, username, password, type FROM admin WHERE username = ? LIMIT 1');
-    $stmt->execute([$username]);
+    // Fetch user by username and password (plaintext storage). If you later hash passwords,
+    // change this to fetch by username only and verify with password_verify().
+    $stmt = $pdo->prepare('SELECT id, username, password, type FROM admin WHERE username = ? AND password = ? LIMIT 1');
+    $stmt->execute([$username, $password]);
     $row = $stmt->fetch();
 
     if (!$row) {
@@ -45,28 +46,36 @@ try {
             echo json_encode(['ok' => false, 'error' => 'Invalid username or password.']);
             exit;
         } else {
-            header('Location: /shreedatta-capital-web/index.html?error=1');
+            header('Location: /index.html?error=1');
             exit;
         }
     }
 
-    // NOTE: in your screenshot the password is stored as plain text (admin123)
-    // For production, use password_hash/password_verify.
-    $isValid = hash_equals((string)$row['password'], (string)$password);
-
-    if (!$isValid) {
-        $_SESSION['login_error'] = 'Invalid username or password.';
-        if ($wantsJson) {
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => false, 'error' => 'Invalid username or password.']);
-            exit;
-        } else {
-            header('Location: /shreedatta-capital-web/index.html?error=1');
-            exit;
-        }
-    }
-
+    // Since selection is by username+password above, no additional password check needed.
+    // For production, switch to hashed passwords.
     // Authenticated
+    // Regenerate session ID to prevent fixation
+    if (function_exists('session_regenerate_id')) {
+        @session_regenerate_id(true);
+    }
+
+    // Apply "remember me" by extending the session cookie lifetime
+    // Note: session cookie params must be set after session_start; we can refresh cookie here
+    $cookieParams = session_get_cookie_params();
+    if ($remember) {
+        $expire = time() + (60 * 60 * 24 * 30); // 30 days
+    } else {
+        $expire = 0; // session cookie (until browser close)
+    }
+    // Re-set the cookie with desired expiry
+    setcookie(session_name(), session_id(), [
+        'expires' => $expire,
+        'path' => $cookieParams['path'] ?? '/',
+        'domain' => $cookieParams['domain'] ?? '',
+        'secure' => (bool)($cookieParams['secure'] ?? false),
+        'httponly' => (bool)($cookieParams['httponly'] ?? true),
+        'samesite' => 'Lax',
+    ]);
     $_SESSION['user'] = [
         'id' => (int)$row['id'],
         'username' => $row['username'],
@@ -79,12 +88,12 @@ try {
     ];
 
     // Determine redirect target based on type
-    $redirect = '/shreedatta-capital-web/index.html';
+    $redirect = '/index.html';
     $role = strtoupper((string)$row['type']);
     if ($role === 'SUPER') {
-        $redirect = '/shreedatta-capital-web/admin/super/index.html';
+        $redirect = '/admin/super/index.html';
     } else if ($role === 'SUB' || $role === 'SUBADMIN' || $role === 'SUB-ADMIN') {
-        $redirect = '/shreedatta-capital-web/admin/sub/index.html';
+        $redirect = '/admin/sub/index.html';
     }
     if ($wantsJson) {
         header('Content-Type: application/json');
