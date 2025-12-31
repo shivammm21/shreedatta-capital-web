@@ -70,7 +70,7 @@ try {
     $languageMap = [
         'en' => 'english',
         'hi' => 'hindi', 
-        'ma' => 'marathi'
+        'mr' => 'marathi'
     ];
     
     // Get the correct language key for JSON
