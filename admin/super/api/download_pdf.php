@@ -3,8 +3,14 @@
 // Generates complete PDF template with all sections
 
 try {
-    // Get user ID from request
-    $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+    // Get user ID(s) from request. If CSV is provided, redirect to multi renderer.
+    $rawUserId = isset($_GET['user_id']) ? trim((string)$_GET['user_id']) : '';
+    if ($rawUserId !== '' && strpos($rawUserId, ',') !== false) {
+        $csv = preg_replace('/[^0-9,]/', '', $rawUserId); // sanitize
+        header('Location: ./download_pdf_multi.php?user_ids=' . $csv);
+        exit;
+    }
+    $userId = ($rawUserId !== '') ? (int)$rawUserId : 0;
     
     if ($userId <= 0) {
         http_response_code(400);
@@ -291,10 +297,14 @@ try {
                 z-index: 1;
                 width: var(--watermark-size);
                 height: var(--watermark-size);
-                background-image: url("../../../asset/images/Logo.png");
-                background-size: contain;
-                background-repeat: no-repeat;
-                background-position: center;
+            }
+            .watermark-img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                filter: none;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
             
             /* Main title */
@@ -508,7 +518,7 @@ try {
         <!-- A4 Page Container -->
         <div class="page">
             <!-- Logo watermark -->
-            <div class="watermark"></div>
+            <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
             
             <!-- Header section -->
             <div class="main-title">Shree Datta Capital Agreement</div>
@@ -566,7 +576,7 @@ try {
         <!-- Page 2: Front Aadhaar -->
         ' . ($hasFrontAadhaar ? '
         <div class="page">
-            <div class="watermark"></div>
+            <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
             <div class="page-title">Aadhaar Card - Front</div>
             <div class="aadhaar-container">
                 <img src="' . $frontAadhaarData . '" alt="Front Aadhaar" class="aadhaar-image">
@@ -574,7 +584,7 @@ try {
         </div>
         ' : '
         <div class="page">
-            <div class="watermark"></div>
+            <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
             <div class="page-title">Aadhaar Card - Front</div>
             <div class="aadhaar-container">
                 <div>Front Aadhaar Image<br>Not Available</div>
@@ -585,7 +595,7 @@ try {
         <!-- Page 3: Back Aadhaar -->
         ' . ($hasBackAadhaar ? '
         <div class="page">
-            <div class="watermark"></div>
+            <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
             <div class="page-title">Aadhaar Card - Back</div>
             <div class="aadhaar-container">
                 <img src="' . $backAadhaarData . '" alt="Back Aadhaar" class="aadhaar-image">
@@ -593,7 +603,7 @@ try {
         </div>
         ' : '
         <div class="page">
-            <div class="watermark"></div>
+            <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
             <div class="page-title">Aadhaar Card - Back</div>
             <div class="aadhaar-container">
                 <div>Back Aadhaar Image<br>Not Available</div>

@@ -687,11 +687,30 @@ if (dashboardRoot) {
         const prevText = confirmDeleteBtn.textContent;
         confirmDeleteBtn.disabled = true; confirmDeleteBtn.textContent = 'Deleting...';
         try {
-          // Static delete: remove from local list and update counts
+          // Call backend to delete from DB when in SUPER area
+          const inSuper = location.pathname.includes('/admin/super/');
+          if (inSuper) {
+            try {
+              const fd = new FormData();
+              fd.append('user_id', String(pendingDeleteUserId));
+              const res = await fetch('/shreedatta-capital-web/admin/super/api/user_delete.php', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd,
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok || !data || data.ok !== true) {
+                throw new Error((data && data.error) ? data.error : 'Delete failed');
+              }
+            } catch (e) {
+              alert('Failed to delete from server: ' + (e && e.message ? e.message : 'Unknown error'));
+              return; // keep modal open
+            }
+          }
+          // Update local list and UI
           users = users.filter(u => String(u.id) !== String(pendingDeleteUserId));
           const counts = recalcCounts(users);
           renderCounts(counts);
-          // Update simplified super grid (ensures plus card shows)
           const merged = buildCategoryCounts(users, counts);
           renderSuperGrid(merged);
           closeConfirm();

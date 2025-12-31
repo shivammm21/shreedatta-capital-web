@@ -1363,9 +1363,29 @@
         window.open(url, '_blank');
       };
 
-      window.deleteUser = (userId) => {
-        console.log('Delete user:', userId);
-        // TODO: Implement delete user functionality
+      window.deleteUser = async (userId) => {
+        try {
+          userId = Number(userId || 0);
+          if (!userId) return;
+          const ok = confirm('Delete this submission permanently? This will also remove associated documents.');
+          if (!ok) return;
+          const fd = new FormData();
+          fd.append('user_id', String(userId));
+          const res = await fetch('./api/user_delete.php', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            alert((data && data.error) ? data.error : 'Failed to delete');
+            return;
+          }
+          // Refresh table after deletion
+          await renderTable();
+        } catch (_) {
+          alert('Network error. Please try again.');
+        }
       };
 
       // Render categories
@@ -1614,12 +1634,18 @@
         });
       }
 
-      // Download functionality - disabled since we're not showing sample data
+      // Download Selected: open the same API with CSV user IDs
       window.downloadSelected = () => {
-        // Since we're no longer showing sample user data in the table,
-        // this function is disabled. In the future, this should download
-        // actual user submission data when that feature is implemented.
-        alert('Download functionality will be available when user submission data is integrated.');
+        const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+          .map(cb => Number(cb.getAttribute('data-user-id') || '0'))
+          .filter(n => Number.isFinite(n) && n > 0);
+        if (ids.length === 0) {
+          alert('Please select at least one submission.');
+          return;
+        }
+        const csv = ids.join(',');
+        const url = `./api/download_pdf.php?user_id=${encodeURIComponent(csv)}`;
+        window.open(url, '_blank');
       };
 
       const clearAllSelections = () => {
