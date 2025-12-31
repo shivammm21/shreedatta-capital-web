@@ -89,6 +89,7 @@ try {
             $formsDataId = null;
         }
 
+        
         if ($formsDataId !== null) {
             // 2) Fetch submissions that belong to this main category id
             try {
