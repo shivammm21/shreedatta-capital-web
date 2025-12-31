@@ -277,7 +277,7 @@
         <div id="successMeta" style="margin-top:6px; color:#6b7280; font-size:13px;"></div>
       </div>
       <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
-        <a id="downloadPdfBtn" href="#" class="btn hidden" target="_blank" rel="noopener" role="button">Download PDF</a>
+        <a id="downloadPdfBtn" href="#" class="btn hidden" target="_blank" rel="noopener" role="button">Download application form</a>
         <button id="successClose" class="btn">Close</button>
       </div>
     </div>
@@ -394,6 +394,19 @@
     document.getElementById('firstName')?.addEventListener('input', setAgreement);
     document.getElementById('lastName')?.addEventListener('input', setAgreement);
 
+    // Build PDF URL (same logic as admin category page)
+    function buildPdfUrlPublic(fullName, drawName, formKey) {
+      const safeName = String(fullName || '')
+        .replace(/[^A-Za-z0-9_-]+/g, '_')
+        .replace(/_{2,}/g, '_')
+        .replace(/^_+|_+$/g, '');
+      const safeDraw = String(drawName || formKey || '')
+        .replace(/[^A-Za-z0-9_-]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-+|-+$/g, '');
+      return `/shreedatta-capital-web/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
+    }
+
     // Validation helpers
     function formIsValid() {
       const first = document.getElementById('firstName').value.trim();
@@ -492,10 +505,17 @@
       // Do not show User ID in the modal
       msgEl.textContent = 'Your response has been recorded.';
       metaEl.textContent = [name ? `Name: ${name}` : '', category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '', when ? `Time: ${when}` : ''].filter(Boolean).join(' · ');
-      // Configure Download button
+      // Configure Download button (prefer dynamic endpoint)
       if (dlBtn) {
-        if (pdfUrl) {
-          dlBtn.href = pdfUrl;
+        let href = '';
+        if (userID) {
+          // Use dynamic renderer under form/api relative to this page
+          href = `api/download_pdf.php?user_id=${encodeURIComponent(userID)}`;
+        } else if (pdfUrl) {
+          href = pdfUrl;
+        }
+        if (href) {
+          dlBtn.href = href;
           dlBtn.classList.remove('hidden');
         } else {
           dlBtn.href = '#';
@@ -664,7 +684,8 @@
           throw new Error(msg + det);
         }
         const when = new Date().toLocaleString(undefined, { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:true });
-        showSuccess({ userID: data.userID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl });
+        const computedPdfUrl = buildPdfUrlPublic(`${first} ${last}`.trim(), draw, 'gold');
+        showSuccess({ userID: data.userID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl || computedPdfUrl });
         e.target.reset();
         setAgreement();
         photoPreview.src = '';
