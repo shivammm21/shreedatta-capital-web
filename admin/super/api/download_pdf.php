@@ -81,9 +81,9 @@ try {
     
     // Add static 10th rule based on language
     $staticRule10 = [
-        'english' => "I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
-        'hindi' => "मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-        'marathi' => "मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        'english' => "10) I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
+        'hindi' => "10) मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+        'marathi' => "10) मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
     ];
     
     // Add section titles in different languages
@@ -179,6 +179,58 @@ try {
     $userInfoHeight = $needsWrapping ? 200 : 140; // Increase height if wrapping needed
     $termsTopPosition = $needsWrapping ? 420 : 370; // Push terms down if wrapping needed
     $imageSpotTop = $needsWrapping ? 220 : 180; // Move image down if wrapping needed
+    
+    // Check if terms are too long for one page (estimate based on character count)
+    $termsLength = strlen($termsConditions);
+    $maxTermsPerPage = 2000; // Increased to use full page height
+    $needsTermsPageBreak = $termsLength > $maxTermsPerPage;
+    
+    // Split terms if needed
+    $termsPages = [];
+    if ($needsTermsPageBreak) {
+        // Split terms into chunks that fit on pages, preferring breaks at numbered items
+        $termsLines = explode("\n", $termsConditions);
+        $currentPage = '';
+        $currentLength = 0;
+        
+        foreach ($termsLines as $line) {
+            $lineLength = strlen($line) + 1; // +1 for newline
+            
+            // Check if this line starts a new numbered item (like "1)", "2)", etc.)
+            $isNumberedItem = preg_match('/^\s*\d+\)/', $line);
+            
+            // If adding this line would exceed the limit, start a new page
+            // Prefer to break at numbered items for better readability
+            if ($currentLength + $lineLength > $maxTermsPerPage && $currentPage !== '') {
+                // If this is a numbered item and we're close to the limit, break here
+                if ($isNumberedItem || $currentLength > $maxTermsPerPage * 0.8) {
+                    $termsPages[] = trim($currentPage);
+                    $currentPage = $line . "\n";
+                    $currentLength = $lineLength;
+                } else {
+                    // Add this line and continue
+                    $currentPage .= $line . "\n";
+                    $currentLength += $lineLength;
+                }
+            } else {
+                $currentPage .= $line . "\n";
+                $currentLength += $lineLength;
+            }
+        }
+        
+        // Add the last page if there's content
+        if (trim($currentPage) !== '') {
+            $termsPages[] = trim($currentPage);
+        }
+        
+        // Ensure we have at least one page
+        if (empty($termsPages)) {
+            $termsPages[] = $termsConditions;
+        }
+    } else {
+        // Single page of terms
+        $termsPages[] = $termsConditions;
+    }
     
     // Create complete template matching the original
     $html = '<!DOCTYPE html>
@@ -434,6 +486,7 @@ try {
             .terms p {
                 margin: 5px 0;
                 text-align: justify;
+                /* Remove height restriction to allow full page usage */
             }
             
             /* Signature section */
@@ -563,15 +616,46 @@ try {
             <!-- Terms and conditions -->
             <div class="terms">
                 <h4>' . htmlspecialchars($termsHeading) . '</h4>
-                <p>' . nl2br(htmlspecialchars($termsConditions)) . '</p>
+                <p>' . nl2br(htmlspecialchars($termsPages[0])) . '</p>
             </div>
             
-            <!-- Signature section -->
+            ' . (count($termsPages) === 1 ? '
+            <!-- Signature section (only if this is the only terms page) -->
             <div class="signature-section">
                 <div class="tick"></div>
                 <div class="username">' . htmlspecialchars($userName) . '</div>
+            </div>' : '') . '
+        </div>';
+        
+        // Add additional terms pages if needed
+        if (count($termsPages) > 1) {
+            for ($i = 1; $i < count($termsPages); $i++) {
+                $isLastTermsPage = ($i === count($termsPages) - 1);
+                
+                $html .= '
+        
+        <!-- Terms Continuation Page ' . ($i + 1) . ' -->
+        <div class="page">
+            <!-- Logo watermark -->
+            <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
+            
+            <!-- Terms and conditions continuation -->
+            <div class="terms" style="top: 30px; bottom: 120px; right: 30px; left: 30px; position: absolute;">
+                <h4>' . htmlspecialchars($termsHeading) . ' (Continued)</h4>
+                <p>' . nl2br(htmlspecialchars($termsPages[$i])) . '</p>
             </div>
-        </div>
+            
+            ' . ($isLastTermsPage ? '
+            <!-- Signature section (only on the last terms page) -->
+            <div class="signature-section">
+                <div class="tick"></div>
+                <div class="username">' . htmlspecialchars($userName) . '</div>
+            </div>' : '') . '
+        </div>';
+            }
+        }
+        
+        $html .= '
         
         <!-- Page 2: Front Aadhaar -->
         ' . ($hasFrontAadhaar ? '
