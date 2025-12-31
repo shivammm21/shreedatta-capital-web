@@ -1354,10 +1354,13 @@
         });
       };
 
-      // User actions (placeholder functions)
+      // User actions - Open PDF in new tab instead of forcing download
       window.viewUser = (userId) => {
-        console.log('View user:', userId);
-        // TODO: Implement view user functionality
+        console.log('Opening PDF for user:', userId);
+        
+        // Open in new tab instead of forcing download
+        const url = `./api/download_pdf.php?user_id=${userId}`;
+        window.open(url, '_blank');
       };
 
       window.deleteUser = (userId) => {
