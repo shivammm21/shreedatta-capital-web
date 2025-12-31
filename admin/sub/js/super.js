@@ -1,8 +1,8 @@
-// admin/super/js/super.js
-// Enforce PHP-session auth for SUPER admin, and wire logout to PHP endpoint
+// admin/sub/js/super.js
+// Enforce PHP-session auth for SUB (and SUPER) admin areas, and wire logout to PHP endpoint
 (async () => {
   try {
-    const res = await fetch('/../auth.php', {
+    const res = await fetch('/admin/sub/auth.php', {
       headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       cache: 'no-store'
     });
@@ -16,7 +16,7 @@
       // title.textContent = `Welcome, ${data.user.username}`;
     }
   } catch (_) {
-    window.location.replace('/../../../index.html');
+    window.location.replace('/index.html');
     return;
   }
 
