@@ -28,9 +28,9 @@ try {
         $lk = $map[$userLanguage] ?? 'english';
         $terms = $languages[$lk] ?? $languages['english'] ?? 'Terms and conditions not available';
         $rule10 = [
-            'english' => "10) I, $userName, have read all the above terms and conditions and I agree to them.",
-            'hindi' => "10) मैं, $userName, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-            'marathi' => "10) मी, $userName, सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+            'english' => "I, $userName, have read all the above terms and conditions and I agree to them.",
+            'hindi' => "मैं, $userName, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+            'marathi' => "मी, $userName, सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
         ];
         if ($terms && $terms !== 'Terms and conditions not available') { $terms .= "\n".$rule10[$lk] ?? $rule10['english']; }
 
