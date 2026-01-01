@@ -1093,7 +1093,9 @@
           card.className = 'cat-card';
           const title = (f.form_name || '').trim() || 'Untitled';
           const token = (f.form_link || '').trim();
-          const fullUrl = token ? `/form/?token=${encodeURIComponent(token)}` : '';
+          const pathUrl = token ? `/form/?token=${encodeURIComponent(token)}` : '';
+          const origin = window.location.origin || (location.protocol + '//' + location.host);
+          const fullUrl = pathUrl ? (pathUrl.startsWith('http') ? pathUrl : `${origin}${pathUrl}`) : '';
           const thisFormId = Number(f.id || 0);
           const countVal = (countsByFormId && thisFormId) ? Number(countsByFormId[thisFormId] || 0) : 0;
           card.innerHTML = `
