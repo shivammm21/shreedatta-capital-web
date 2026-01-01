@@ -81,9 +81,9 @@ try {
     
     // Add static 10th rule based on language
     $staticRule10 = [
-        'english' => "I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
-        'hindi' => "मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-        'marathi' => "मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        'english' => "10) I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
+        'hindi' => "10) मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+        'marathi' => "10) मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
     ];
     
     // Add section titles in different languages
@@ -182,7 +182,15 @@ try {
     
     // Check if terms are too long for one page (estimate based on character count)
     $termsLength = strlen($termsConditions);
-    $maxTermsPerPage = 2000; // Increased to use full page height
+    
+    // Language-specific pagination limits
+    $maxTermsPerPageByLanguage = [
+        'english' => 2000,  // Original value for English
+        'hindi' => 5100,    // Hindi characters are typically wider and need more space
+        'marathi' => 4700   // Marathi falls between English and Hindi in character density
+    ];
+    
+    $maxTermsPerPage = $maxTermsPerPageByLanguage[$jsonLanguageKey] ?? $maxTermsPerPageByLanguage['english'];
     $needsTermsPageBreak = $termsLength > $maxTermsPerPage;
     
     // Split terms if needed
