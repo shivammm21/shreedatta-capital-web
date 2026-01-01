@@ -292,6 +292,22 @@
       width: 16px;
       height: 16px;
     }
+    .bulk-delete-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .bulk-delete-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+    .bulk-delete-btn svg { width:16px; height:16px; }
     
     /* Action icons container */
     .action-icons { display: flex; gap: 6px; justify-content: flex-end; }
@@ -1854,6 +1870,49 @@
         window.open(url, '_blank');
       };
 
+      // Bulk delete UX handlers
+      window.openBulkDeleteModal = () => {
+        const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+          .map(cb => Number(cb.getAttribute('data-user-id') || '0'))
+          .filter(n => Number.isFinite(n) && n > 0);
+        if (ids.length === 0) { alert('Please select at least one submission.'); return; }
+        const m = document.getElementById('bulkDeleteModal');
+        if (m) m.classList.remove('hidden');
+      };
+
+      window.closeBulkDeleteModal = () => {
+        const m = document.getElementById('bulkDeleteModal');
+        if (m) m.classList.add('hidden');
+      };
+
+      window.confirmBulkDelete = async () => {
+        const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+          .map(cb => Number(cb.getAttribute('data-user-id') || '0'))
+          .filter(n => Number.isFinite(n) && n > 0);
+        if (ids.length === 0) { closeBulkDeleteModal(); return; }
+        try {
+          const fd = new FormData();
+          fd.append('user_ids', JSON.stringify(ids));
+          const res = await fetch('./api/user_delete_bulk.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data || data.ok !== true) {
+            alert((data && data.error) ? data.error : 'Failed to delete');
+            return;
+          }
+          closeBulkDeleteModal();
+          // Clear selections and refresh
+          const rowCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+          rowCheckboxes.forEach(cb => (cb.checked = false));
+          const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+          if (selectAllCheckbox) { selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = false; }
+          if (typeof updateSelectedCount === 'function') updateSelectedCount();
+          if (typeof updateBottomContainer === 'function') updateBottomContainer();
+          await renderTable();
+        } catch (e) {
+          alert('Network error. Please try again.');
+        }
+      };
+
       const clearAllSelections = () => {
         const checkboxes = document.querySelectorAll('.row-checkbox:checked');
         checkboxes.forEach(cb => cb.checked = false);
@@ -1877,16 +1936,45 @@
   </script>
 
   <!-- Bottom Action Container -->
-  <div class="bottom-action-container" id="bottomActionContainer">
+  <div class="bottom-action-container" id="bottomActionContainer" style="justify-content: space-between;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="download-btn" id="downloadBtn" onclick="downloadSelected()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7,10 12,15 17,10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download Selected
+      </button>
+    </div>
     <div class="selected-count" id="selectedCount">0 items selected</div>
-    <button class="download-btn" id="downloadBtn" onclick="downloadSelected()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="7,10 12,15 17,10"></polyline>
-        <line x1="12" y1="15" x2="12" y2="3"></line>
-      </svg>
-      Download Selected
-    </button>
+    <div>
+      <button class="bulk-delete-btn" id="bulkDeleteBtn" onclick="openBulkDeleteModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3,6 5,6 21,6"></polyline>
+          <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+        Delete Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- Bulk Delete Confirmation Modal -->
+  <div id="bulkDeleteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bulkDeleteTitle">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div id="bulkDeleteTitle" class="modal-title">Delete Selected Submissions</div>
+      </div>
+      <div class="modal-content">
+        <p class="modal-text">Are you sure you want to delete all selected submissions? This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeBulkDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" style="background:#dc2626;" onclick="confirmBulkDelete()">Delete</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>
