@@ -81,9 +81,59 @@ try {
     
     // Add static 10th rule based on language
     $staticRule10 = [
-        'english' => "I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
-        'hindi' => "मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-        'marathi' => "मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        'english' => " I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
+        'hindi' => " मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+        'marathi' => " मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+    ];
+    
+    // Add section titles in different languages
+    $sectionTitles = [
+        'english' => "Shree Datta Capital - Terms and Conditions Agreement",
+        'hindi' => "श्री दत्त कैपिटल - नियम और शर्तें समझौता",
+        'marathi' => "श्री दत्त कॅपिटल - अटी व शर्ती करार"
+    ];
+    
+    // Add different left alignment positions for each language section title
+    $sectionTitlePositions = [
+        'english' => '34%',    // Original position for English
+        'hindi' => '24%',      // Slightly more right for Hindi
+        'marathi' => '22%'     // Between English and Hindi for Marathi
+    ];
+    
+    // Add field labels in different languages
+    $fieldLabels = [
+        'english' => [
+            'name' => 'Name:',
+            'token' => 'Token number(s):',
+            'draw' => 'Draw Name:',
+            'category' => 'Draw Category:'
+        ],
+        'hindi' => [
+            'name' => 'नाम:',
+            'token' => 'टोकन संख्या:',
+            'draw' => 'ड्रॉ का नाम:',
+            'category' => 'ड्रॉ श्रेणी:'
+        ],
+        'marathi' => [
+            'name' => 'नाव:',
+            'token' => 'टोकन क्रमांक:',
+            'draw' => 'ड्रॉचे नाव:',
+            'category' => 'ड्रॉ श्रेणी:'
+        ]
+    ];
+    
+    // Add terms heading in different languages
+    $termsHeadings = [
+        'english' => 'Terms and conditions',
+        'hindi' => 'नियम और शर्तें',
+        'marathi' => 'अटी व शर्ती'
+    ];
+    
+    // Add error messages in different languages
+    $errorMessages = [
+        'english' => 'Terms and conditions not available',
+        'hindi' => 'नियम और शर्तें उपलब्ध नहीं हैं',
+        'marathi' => 'अटी व शर्ती उपलब्ध नाहीत'
     ];
     
     // Add section titles in different languages
@@ -139,7 +189,7 @@ try {
     // Get the appropriate section title, position, labels, terms heading, error message, and 10th rule
     $sectionTitle = $sectionTitles[$jsonLanguageKey] ?? $sectionTitles['english'];
     $sectionTitlePosition = $sectionTitlePositions[$jsonLanguageKey] ?? $sectionTitlePositions['english'];
-    $labels = $fieldLabels['english'];
+    $labels = $fieldLabels[$jsonLanguageKey] ?? $fieldLabels['english'];
     $termsHeading = $termsHeadings[$jsonLanguageKey] ?? $termsHeadings['english'];
     $errorMessage = $errorMessages[$jsonLanguageKey] ?? $errorMessages['english'];
     $rule10 = $staticRule10[$jsonLanguageKey] ?? $staticRule10['english'];
@@ -185,10 +235,12 @@ try {
     
     // Language-specific pagination limits
     $maxTermsPerPageByLanguage = [
-        'english' => 2000,  // Original value for English
+        'english' => 2100,  // Original value for English
         'hindi' => 5100,    // Hindi characters are typically wider and need more space
         'marathi' => 4700   // Marathi falls between English and Hindi in character density
     ];
+    
+    $maxLinesPerPage = 28; // Limit for lines per page
     
     $maxTermsPerPage = $maxTermsPerPageByLanguage[$jsonLanguageKey] ?? $maxTermsPerPageByLanguage['english'];
     $needsTermsPageBreak = $termsLength > $maxTermsPerPage;
@@ -595,19 +647,19 @@ try {
             <div class="user-info">
                 <table>
                     <tr>
-                        <td class="label">Name:</td>
+                        <td class="label">' . htmlspecialchars($labels['name']) . '</td>
                         <td>' . htmlspecialchars($userName) . '</td>
                     </tr>
                     <tr>
-                        <td class="label">Token number(s):</td>
+                        <td class="label">' . htmlspecialchars($labels['token']) . '</td>
                         <td class="token-cell">' . htmlspecialchars($tokenNumbers) . '</td>
                     </tr>
                     <tr>
-                        <td class="label">Draw Name:</td>
+                        <td class="label">' . htmlspecialchars($labels['draw']) . '</td>
                         <td>' . htmlspecialchars($drawName) . '</td>
                     </tr>
                     <tr>
-                        <td class="label">Draw Category:</td>
+                        <td class="label">' . htmlspecialchars($labels['category']) . '</td>
                         <td>' . htmlspecialchars($formName) . '</td>
                     </tr>
                 </table>

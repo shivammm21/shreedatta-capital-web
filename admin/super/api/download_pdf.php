@@ -81,9 +81,9 @@ try {
     
     // Add static 10th rule based on language
     $staticRule10 = [
-        'english' => "10) I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
-        'hindi' => "10) मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-        'marathi' => "10) मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        'english' => "I, " . $userName . ", have read all the above terms and conditions and I agree to them.",
+        'hindi' => "मैं, " . $userName . ",  उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+        'marathi' => "मी, " . $userName . ",सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
     ];
     
     // Add section titles in different languages
@@ -139,7 +139,7 @@ try {
     // Get the appropriate section title, position, labels, terms heading, error message, and 10th rule
     $sectionTitle = $sectionTitles[$jsonLanguageKey] ?? $sectionTitles['english'];
     $sectionTitlePosition = $sectionTitlePositions[$jsonLanguageKey] ?? $sectionTitlePositions['english'];
-    $labels = $fieldLabels['english'];
+    $labels = $fieldLabels[$jsonLanguageKey] ?? $fieldLabels['english'];
     $termsHeading = $termsHeadings[$jsonLanguageKey] ?? $termsHeadings['english'];
     $errorMessage = $errorMessages[$jsonLanguageKey] ?? $errorMessages['english'];
     $rule10 = $staticRule10[$jsonLanguageKey] ?? $staticRule10['english'];
@@ -185,10 +185,12 @@ try {
     
     // Language-specific pagination limits
     $maxTermsPerPageByLanguage = [
-        'english' => 2000,  // Original value for English
+        'english' => 2100,  // Original value for English
         'hindi' => 5100,    // Hindi characters are typically wider and need more space
         'marathi' => 4700   // Marathi falls between English and Hindi in character density
     ];
+    
+    $maxLinesPerPage = 28; // Limit for lines per page
     
     $maxTermsPerPage = $maxTermsPerPageByLanguage[$jsonLanguageKey] ?? $maxTermsPerPageByLanguage['english'];
     $needsTermsPageBreak = $termsLength > $maxTermsPerPage;
@@ -595,19 +597,19 @@ try {
             <div class="user-info">
                 <table>
                     <tr>
-                        <td class="label">Name:</td>
+                        <td class="label">' . htmlspecialchars($labels['name']) . '</td>
                         <td>' . htmlspecialchars($userName) . '</td>
                     </tr>
                     <tr>
-                        <td class="label">Token number(s):</td>
+                        <td class="label">' . htmlspecialchars($labels['token']) . '</td>
                         <td class="token-cell">' . htmlspecialchars($tokenNumbers) . '</td>
                     </tr>
                     <tr>
-                        <td class="label">Draw Name:</td>
+                        <td class="label">' . htmlspecialchars($labels['draw']) . '</td>
                         <td>' . htmlspecialchars($drawName) . '</td>
                     </tr>
                     <tr>
-                        <td class="label">Draw Category:</td>
+                        <td class="label">' . htmlspecialchars($labels['category']) . '</td>
                         <td>' . htmlspecialchars($formName) . '</td>
                     </tr>
                 </table>

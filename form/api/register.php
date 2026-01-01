@@ -84,6 +84,15 @@ try {
     // DB
     require_once __DIR__ . '/../../asset/db/config.php'; // provides $pdo
 
+    // Validate that forms_aggri_id exists
+    $stmt = $pdo->prepare('SELECT id FROM forms_aggri WHERE id = ? LIMIT 1');
+    $stmt->execute([$formsAggriId]);
+    if (!$stmt->fetch()) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Invalid form ID from token']);
+        exit;
+    }
+
     $pdo->beginTransaction();
     try {
         // Look up parent category id (forms_data.id) from forms_aggri.catogory_id
@@ -102,12 +111,19 @@ try {
         // Insert into `all-submissions` (note: hyphenated table name) including `language` column
         // Prefer inserting `form_data_id` as well; fall back if column is missing
         try {
+            // First try with both form_data_id and language columns
             $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `form_data_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?, ?)');
             $ins->execute([$formsAggriId, $formDataId, $first, $last, $lang, $tokenNo, $draw]);
         } catch (Throwable $eInsertWithCat) {
-            // Fallback: legacy schema without form_data_id
-            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
-            $ins->execute([$formsAggriId, $first, $last, $lang, $tokenNo, $draw]);
+            try {
+                // Try without form_data_id but with language
+                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
+                $ins->execute([$formsAggriId, $first, $last, $lang, $tokenNo, $draw]);
+            } catch (Throwable $eInsertWithLang) {
+                // Final fallback: legacy schema without form_data_id or language
+                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?)');
+                $ins->execute([$formsAggriId, $first, $last, $tokenNo, $draw]);
+            }
         }
         $userId = (int)$pdo->lastInsertId();
 
@@ -135,7 +151,9 @@ try {
         $pdo->rollBack();
         http_response_code(500);
         $detail = '';
-        if (isset($_GET['debug']) || isset($_POST['debug'])) { $detail = $dbE->getMessage(); }
+        if (isset($_GET['debug']) || isset($_POST['debug'])) { 
+            $detail = $dbE->getMessage() . ' | File: ' . $dbE->getFile() . ' | Line: ' . $dbE->getLine(); 
+        }
         echo json_encode(['ok' => false, 'error' => 'Database error', 'detail' => $detail]);
         exit;
     }
