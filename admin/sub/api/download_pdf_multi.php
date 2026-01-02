@@ -24,15 +24,115 @@ try {
         $drawName = $u['draw_name'] ?? '';
         $userLanguage = $u['language'] ?? 'english';
         $languages = json_decode($u['languages'] ?? '{}', true) ?: [];
-        $map = ['en'=>'english','hi'=>'hindi','ma'=>'marathi'];
+        $map = ['en'=>'english','hi'=>'hindi','mr'=>'marathi'];
         $lk = $map[$userLanguage] ?? 'english';
         $terms = $languages[$lk] ?? $languages['english'] ?? 'Terms and conditions not available';
-        $rule10 = [
-            'english' => "I, $userName, have read all the above terms and conditions and I agree to them.",
-            'hindi' => "मैं, $userName, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
-            'marathi' => "मी, $userName, सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        
+        // Add section titles in different languages
+        $sectionTitles = [
+            'english' => "Shree Datta Capital - Terms and Conditions Agreement",
+            'hindi' => "श्री दत्त कैपिटल - नियम और शर्तें समझौता",
+            'marathi' => "श्री दत्त कॅपिटल - अटी व शर्ती करार"
         ];
-        if ($terms && $terms !== 'Terms and conditions not available') { $terms .= "\n".$rule10[$lk] ?? $rule10['english']; }
+        
+        // Add different left alignment positions for each language section title
+        $sectionTitlePositions = [
+            'english' => '34%',    // Original position for English
+            'hindi' => '24%',      // Slightly more right for Hindi
+            'marathi' => '22%'     // Between English and Hindi for Marathi
+        ];
+        
+        // Add field labels in different languages
+        $fieldLabels = [
+            'english' => [
+                'name' => 'Name:',
+                'token' => 'Token number(s):',
+                'draw' => 'Draw Name:',
+                'category' => 'Draw Category:'
+            ],
+            'hindi' => [
+                'name' => 'नाम:',
+                'token' => 'टोकन संख्या:',
+                'draw' => 'ड्रॉ का नाम:',
+                'category' => 'ड्रॉ श्रेणी:'
+            ],
+            'marathi' => [
+                'name' => 'नाव:',
+                'token' => 'टोकन क्रमांक:',
+                'draw' => 'ड्रॉचे नाव:',
+                'category' => 'ड्रॉ श्रेणी:'
+            ]
+        ];
+        
+        // Add terms heading in different languages
+        $termsHeadings = [
+            'english' => 'Terms and conditions',
+            'hindi' => 'नियम और शर्तें',
+            'marathi' => 'अटी व शर्ती'
+        ];
+        
+        // Get language-specific values
+        $sectionTitle = $sectionTitles[$lk] ?? $sectionTitles['english'];
+        $sectionTitlePosition = $sectionTitlePositions[$lk] ?? $sectionTitlePositions['english'];
+        $labels = $fieldLabels[$lk] ?? $fieldLabels['english'];
+        $termsHeading = $termsHeadings[$lk] ?? $termsHeadings['english'];
+        
+        // Language-specific pagination limits
+        $maxTermsPerPageByLanguage = [
+            'english' => 2100,  // Original value for English
+            'hindi' => 5100,    // Hindi characters are typically wider and need more space
+            'marathi' => 4700   // Marathi falls between English and Hindi in character density
+        ];
+        
+        $maxTermsPerPage = $maxTermsPerPageByLanguage[$lk] ?? $maxTermsPerPageByLanguage['english'];
+        $termsLength = strlen($terms);
+        $needsTermsPageBreak = $termsLength > $maxTermsPerPage;
+        
+        // Split terms if needed for multi-page support
+        $termsPages = [];
+        if ($needsTermsPageBreak) {
+            $termsLines = explode("\n", $terms);
+            $currentPage = '';
+            $currentLength = 0;
+            
+            foreach ($termsLines as $line) {
+                $lineLength = strlen($line) + 1;
+                $isNumberedItem = preg_match('/^\s*\d+\)/', $line);
+                
+                if ($currentLength + $lineLength > $maxTermsPerPage && $currentPage !== '') {
+                    if ($isNumberedItem || $currentLength > $maxTermsPerPage * 0.8) {
+                        $termsPages[] = trim($currentPage);
+                        $currentPage = $line . "\n";
+                        $currentLength = $lineLength;
+                    } else {
+                        $currentPage .= $line . "\n";
+                        $currentLength += $lineLength;
+                    }
+                } else {
+                    $currentPage .= $line . "\n";
+                    $currentLength += $lineLength;
+                }
+            }
+            
+            if (trim($currentPage) !== '') {
+                $termsPages[] = trim($currentPage);
+            }
+            
+            if (empty($termsPages)) {
+                $termsPages[] = $terms;
+            }
+        } else {
+            $termsPages[] = $terms;
+        }
+        $rule10 = [
+            'english' => " I, $userName, have read all the above terms and conditions and I agree to them.",
+            'hindi' => " मैं, $userName, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।",
+            'marathi' => " मी, $userName, सर्व अटी व शर्ती वाचल्या आहेत व त्या मला मान्य आहेत."
+        ];
+        if ($termsPages[0] && $termsPages[0] !== 'Terms and conditions not available') { 
+            $lastPageIndex = count($termsPages) - 1;
+            $termsPages[$lastPageIndex] .= "\n" . ($rule10[$lk] ?? $rule10['english']); 
+        }
 
         $hasPhoto = !empty($u['live_photo']);
         $photoData = $hasPhoto ? ('data:image/jpeg;base64,'.base64_encode($u['live_photo'])) : '';
@@ -50,23 +150,41 @@ try {
           <div class="main-title">Shree Datta Capital Agreement</div>
           <div class="subtitle">'.htmlspecialchars($formName).' Agreement</div>
           <div class="divider"></div>
-          <div class="section-title">Shree Datta Capital - Terms and Conditions Agreement</div>
+          <div class="section-title" style="left: '.$sectionTitlePosition.'; transform: translateX(-50%);">'.htmlspecialchars($sectionTitle).'</div>
           <div class="user-info">
             <table>
-              <tr><td class="label">Name:</td><td>'.htmlspecialchars($userName).'</td></tr>
-              <tr><td class="label">Token number(s):</td><td class="token-cell">'.htmlspecialchars($tokenNumbers).'</td></tr>
-              <tr><td class="label">Draw Name:</td><td>'.htmlspecialchars($drawName).'</td></tr>
-              <tr><td class="label">Draw Category:</td><td>'.htmlspecialchars($formName).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['name']).'</td><td>'.htmlspecialchars($userName).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['token']).'</td><td class="token-cell">'.htmlspecialchars($tokenNumbers).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['draw']).'</td><td>'.htmlspecialchars($drawName).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['category']).'</td><td>'.htmlspecialchars($formName).'</td></tr>
             </table>
           </div>
           <div class="image-spot">'.($photoData ? '<img src="'.$photoData.'" alt="User Photo" class="user-photo">' : 'User Photo<br>Not Available').'</div>
           <div class="terms">
-            <h4>Terms and conditions</h4>
-            <p>'.nl2br(htmlspecialchars($terms)).'</p>
+            <h4>'.htmlspecialchars($termsHeading).'</h4>
+            <p>'.nl2br(htmlspecialchars($termsPages[0])).'</p>
           </div>
-          <div class="signature-section"><div class="tick"></div><div class="username">'.htmlspecialchars($userName).'</div></div>
-        </div>
-        '.($hasFront ? '<div class="page"><div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div><div class="page-title">Aadhaar Card - Front</div><div class="aadhaar-container"><img class="aadhaar-image" src="'.$frontData.'"/></div></div>' : '<div class="page"><div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div><div class="page-title">Aadhaar Card - Front</div><div class="aadhaar-container"><div>Front Aadhaar Image<br>Not Available</div></div></div>').
+          '.(count($termsPages) === 1 ? '<div class="signature-section"><div class="tick"></div><div class="username">'.htmlspecialchars($userName).'</div></div>' : '').'
+        </div>';
+        
+        // Add additional terms pages if needed
+        if (count($termsPages) > 1) {
+            for ($i = 1; $i < count($termsPages); $i++) {
+                $isLastTermsPage = ($i === count($termsPages) - 1);
+                
+                $pages .= '
+        <div class="page">
+          <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
+          <div class="terms" style="top: 30px; bottom: 120px; right: 30px; left: 30px; position: absolute;">
+            <h4>'.htmlspecialchars($termsHeading).' (Continued)</h4>
+            <p>'.nl2br(htmlspecialchars($termsPages[$i])).'</p>
+          </div>
+          '.($isLastTermsPage ? '<div class="signature-section"><div class="tick"></div><div class="username">'.htmlspecialchars($userName).'</div></div>' : '').'
+        </div>';
+            }
+        }
+        
+        $pages .= ($hasFront ? '<div class="page"><div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div><div class="page-title">Aadhaar Card - Front</div><div class="aadhaar-container"><img class="aadhaar-image" src="'.$frontData.'"/></div></div>' : '<div class="page"><div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div><div class="page-title">Aadhaar Card - Front</div><div class="aadhaar-container"><div>Front Aadhaar Image<br>Not Available</div></div></div>').
         ($hasBack ? '<div class="page"><div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div><div class="page-title">Aadhaar Card - Back</div><div class="aadhaar-container"><img class="aadhaar-image" src="'.$backData.'"/></div></div>' : '<div class="page"><div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div><div class="page-title">Aadhaar Card - Back</div><div class="aadhaar-container"><div>Back Aadhaar Image<br>Not Available</div></div></div>');
     }
 
