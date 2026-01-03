@@ -383,10 +383,19 @@
         else if (lang === 'hi') base = remoteLanguages.hindi || '';
         else if (lang === 'mr') base = remoteLanguages.marathi || '';
       }
+      
+      // Format terms to preserve point-wise structure
+      function formatTerms(text) {
+        if (!text) return '';
+        // Convert newlines to <br> tags for HTML display
+        return text.replace(/\n/g, '<br>');
+      }
+      
       if (!base) base = texts[lang] || texts.en;
       const name = getFullName();
       const nameLocalized = name;
-      agreementText.innerHTML = base.replaceAll('__NAME__', nameLocalized || '__NAME__');
+      const formattedBase = formatTerms(base.replaceAll('__NAME__', nameLocalized || '__NAME__'));
+      agreementText.innerHTML = formattedBase;
     }
     setAgreement();
     langSel.addEventListener('change', setAgreement);
@@ -479,10 +488,17 @@
 
         // Store languages for agreement
         if (form.languages && typeof form.languages === 'object') {
+          // Default agreement points for all languages
+          const defaultAgreementPoints = {
+            english: '\n I,__NAME__, have read all the above terms and conditions and I agree to them.',
+            hindi: '\n मैं,__NAME__, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।',
+            marathi: '\n मी,__NAME__, सर्व अटी व शर्ती मी वाचल्या आहेत व त्या मला मान्य आहेत.'
+          };
+          
           remoteLanguages = {
-            english: String(form.languages.english || ''),
-            hindi: String(form.languages.hindi || ''),
-            marathi: String(form.languages.marathi || ''),
+            english: String(form.languages.english || '') + (form.languages.english ? '\n' : '') + defaultAgreementPoints.english,
+            hindi: String(form.languages.hindi || '') + (form.languages.hindi ? '\n' : '') + defaultAgreementPoints.hindi,
+            marathi: String(form.languages.marathi || '') + (form.languages.marathi ? '\n' : '') + defaultAgreementPoints.marathi,
           };
           setAgreement();
         }
