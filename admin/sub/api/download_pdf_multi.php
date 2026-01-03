@@ -9,7 +9,7 @@ try {
 
     require_once __DIR__ . '/../db.php';
 
-    $stmt = $pdo->prepare("SELECT s.id, s.first_name, s.last_name, s.forms_aggri_id, s.mobileno, s.token_no, s.draw_name, s.date_time, s.language, f.form_name, f.languages, d.live_photo, d.front_addhar, d.back_addhar FROM `all-submissions` s LEFT JOIN `forms_aggri` f ON s.forms_aggri_id = f.id LEFT JOIN `user_docs` d ON s.id = d.user_id WHERE s.id = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT s.id, s.first_name, s.last_name, s.forms_aggri_id, s.token_no, s.draw_name, s.date_time, s.language, f.form_name, f.languages, d.live_photo, d.front_addhar, d.back_addhar FROM `all-submissions` s LEFT JOIN `forms_aggri` f ON s.forms_aggri_id = f.id LEFT JOIN `user_docs` d ON s.id = d.user_id WHERE s.id = ? LIMIT 1");
 
     $pages = '';
     $first = true;
@@ -46,24 +46,18 @@ try {
         $fieldLabels = [
             'english' => [
                 'name' => 'Name:',
-                'userid' => 'User ID:',
-                'mobile' => 'Mobile No:',
                 'token' => 'Token number(s):',
                 'draw' => 'Draw Name:',
                 'category' => 'Draw Category:'
             ],
             'hindi' => [
                 'name' => 'नाम:',
-                'userid' => 'यूज़र आईडी:',
-                'mobile' => 'मोबाइल नंबर:',
                 'token' => 'टोकन संख्या:',
                 'draw' => 'ड्रॉ का नाम:',
                 'category' => 'ड्रॉ श्रेणी:'
             ],
             'marathi' => [
                 'name' => 'नाव:',
-                'userid' => 'यूजर आयडी:',
-                'mobile' => 'मोबाईल क्र.:',
                 'token' => 'टोकन क्रमांक:',
                 'draw' => 'ड्रॉचे नाव:',
                 'category' => 'ड्रॉ श्रेणी:'
@@ -85,9 +79,9 @@ try {
         
         // Language-specific pagination limits
         $maxTermsPerPageByLanguage = [
-            'english' => 1800,  // Original value for English
-            'hindi' => 5500,    // Hindi characters are typically wider and need more space
-            'marathi' => 4500   // Marathi falls between English and Hindi in character density
+            'english' => 2100,  // Original value for English
+            'hindi' => 5100,    // Hindi characters are typically wider and need more space
+            'marathi' => 4700   // Marathi falls between English and Hindi in character density
         ];
         
         $maxTermsPerPage = $maxTermsPerPageByLanguage[$lk] ?? $maxTermsPerPageByLanguage['english'];
@@ -156,37 +150,15 @@ try {
           <div class="main-title">Shree Datta Capital Agreement</div>
           <div class="subtitle">'.htmlspecialchars($formName).' Agreement</div>
           <div class="divider"></div>
-          <div class="section-title">' . htmlspecialchars($sectionTitle) . '</div>
-            
-            <!-- User info table -->
-            <div class="user-info">
-                <table>
-                    <tr>
-                        <td class="label">' . htmlspecialchars($labels['name']) . '</td>
-                        <td>' . htmlspecialchars($userName) . '</td>
-                    </tr>
-                    <tr>
-                        <td class="label">' . htmlspecialchars($labels['userid']) . '</td>
-                        <td>' . htmlspecialchars((string)($u['id'] ?? '')) . '</td>
-                    </tr>
-                    <tr>
-                        <td class="label">' . htmlspecialchars($labels['mobile']) . '</td>
-                        <td>' . htmlspecialchars((string)($u['mobileno'] ?? '')) . '</td>
-                    </tr>
-                    <tr>
-                        <td class="label">' . htmlspecialchars($labels['token']) . '</td>
-                        <td class="token-cell">' . htmlspecialchars($tokenNumbers) . '</td>
-                    </tr>
-                    <tr>
-                        <td class="label">' . htmlspecialchars($labels['draw']) . '</td>
-                        <td>' . htmlspecialchars($drawName) . '</td>
-                    </tr>
-                    <tr>
-                        <td class="label">' . htmlspecialchars($labels['category']) . '</td>
-                        <td>' . htmlspecialchars($formName) . '</td>
-                    </tr>
-                </table>
-            </div>
+          <div class="section-title" style="left: '.$sectionTitlePosition.'; transform: translateX(-50%);">'.htmlspecialchars($sectionTitle).'</div>
+          <div class="user-info">
+            <table>
+              <tr><td class="label">'.htmlspecialchars($labels['name']).'</td><td>'.htmlspecialchars($userName).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['token']).'</td><td class="token-cell">'.htmlspecialchars($tokenNumbers).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['draw']).'</td><td>'.htmlspecialchars($drawName).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['category']).'</td><td>'.htmlspecialchars($formName).'</td></tr>
+            </table>
+          </div>
           <div class="image-spot">'.($photoData ? '<img src="'.$photoData.'" alt="User Photo" class="user-photo">' : 'User Photo<br>Not Available').'</div>
           <div class="terms">
             <h4>'.htmlspecialchars($termsHeading).'</h4>
@@ -228,8 +200,8 @@ try {
       .main-title{position:absolute;top:50px;left:50%;transform:translateX(-50%);font-size:24px;font-weight:bold;color:#000;text-transform:uppercase;letter-spacing:2px;text-align:center;z-index:2;white-space:nowrap}
       .subtitle{position:absolute;top:90px;left:50%;transform:translateX(-50%);font-size:25px;color:#000;z-index:2}
       .divider{position:absolute;top:var(--divider-top);left:50%;transform:translateX(-50%);width:730px;height:2px;background:#000;z-index:2}
-      .section-title{position:absolute;top:140px;left: ' . $sectionTitlePosition . ';transform:translateX(-50%);font-size:18px;font-weight:bold;color:#000;text-align:left;z-index:2}
-      .user-info{position:absolute;top:210px;left:30px;width:500px;font-size:15px;z-index:2}
+      .section-title{position:absolute;top:160px;left:34%;transform:translateX(-50%);font-size:18px;font-weight:bold;color:#000;text-align:center;z-index:2}
+      .user-info{position:absolute;top:185px;left:30px;width:500px;font-size:15px;z-index:2}
       .user-info table{width:100%;border-collapse:collapse}
       .user-info td{padding:4px 8px;vertical-align:top}
       .user-info .token-cell{max-width:350px;word-wrap:break-word;word-break:break-all}
