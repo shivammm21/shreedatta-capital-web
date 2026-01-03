@@ -146,6 +146,7 @@ try {
         $hasBack = !empty($u['back_addhar']);
         $frontData = $hasFront ? ('data:image/jpeg;base64,'.base64_encode($u['front_addhar'])) : '';
         $backData = $hasBack ? ('data:image/jpeg;base64,'.base64_encode($u['back_addhar'])) : '';
+        $formsAggriId = $u['forms_aggri_id'] ?? 0;
 
         $sep = $first ? '' : '<div style="page-break-before: always;"></div>';
         $first = false;
@@ -154,7 +155,7 @@ try {
         <div class="page">
           <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
           <div class="main-title">Shree Datta Capital Agreement</div>
-          <div class="subtitle">'.htmlspecialchars($formName).' Agreement</div>
+          <div class="subtitle">'.htmlspecialchars($formName).' Agreement (SDC-'.str_pad($formsAggriId, 5, '0', STR_PAD_LEFT).')</div>
           <div class="divider"></div>
           <div class="section-title" style="left: '.$sectionTitlePosition.'; transform: translateX(-50%);">'.htmlspecialchars($sectionTitle).'</div>
           <div class="user-info">

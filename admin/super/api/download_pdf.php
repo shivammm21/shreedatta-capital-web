@@ -63,6 +63,7 @@ try {
     $drawName = $userData['draw_name'] ?? '';
     $userLanguage = $userData['language'] ?? 'english'; // User's preferred language
     $submissionDate = $userData['date_time'] ? date('d/m/Y', strtotime($userData['date_time'])) : date('d/m/Y');
+    $formsAggriId = $userData['forms_aggri_id'] ?? 0;
     
     // Parse languages JSON and get terms for user's language
     $languages = json_decode($userData['languages'] ?? '{}', true) ?: [];
@@ -592,7 +593,7 @@ try {
             
             <!-- Header section -->
             <div class="main-title">Shree Datta Capital Agreement</div>
-            <div class="subtitle">' . htmlspecialchars($formName) . ' Agreement</div>
+            <div class="subtitle">' . htmlspecialchars($formName) . ' Agreement (SDC-' . str_pad($formsAggriId, 5, '0', STR_PAD_LEFT) . ')</div>
             
             <!-- Center divider line -->
             <div class="divider"></div>

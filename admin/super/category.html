@@ -1133,7 +1133,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"></polyline><path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path><path d="m10,11 0,6"></path><path d="m14,11 0,6"></path><path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path></svg>
               </button>
             </div>
-            <div class="cat-badge">#${thisFormId || ''}</div>
+            <div class="cat-badge">SDC-${String(thisFormId || 0).padStart(5, '0')}</div>
             <div class="cat-header">
               <div class="cat-name">${title.replace(/</g,'&lt;')}</div>
               <div class="cat-count">${countVal}</div>
@@ -1874,16 +1874,23 @@
         const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
           .map(cb => Number(cb.getAttribute('data-user-id') || '0'))
           .filter(n => Number.isFinite(n) && n > 0);
-        if (ids.length === 0) {
-          alert('Please select at least one submission.');
+        if (!ids.length) {
+          alert('No submissions selected');
           return;
         }
         const csv = ids.join(',');
         const url = `./api/download_pdf.php?user_id=${encodeURIComponent(csv)}`;
         window.open(url, '_blank');
+        
+        // Clear all checkboxes after download is initiated
+        setTimeout(() => {
+          document.querySelectorAll('.row-checkbox:checked').forEach(cb => cb.checked = false);
+          updateSelectedCount();
+          updateBottomContainer();
+          updateSelectAllCheckbox();
+        }, 500);
       };
 
-      // Bulk delete UX handlers
       window.openBulkDeleteModal = () => {
         const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
           .map(cb => Number(cb.getAttribute('data-user-id') || '0'))

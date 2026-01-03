@@ -1134,7 +1134,7 @@
           const thisFormId = Number(f.id || 0);
           const countVal = (countsByFormId && thisFormId) ? Number(countsByFormId[thisFormId] || 0) : 0;
           card.innerHTML = `
-            <div class="cat-badge">#${thisFormId || ''}</div>
+            <div class="cat-badge">SDC-${String(thisFormId || 0).padStart(5, '0')}</div>
             <div class="cat-header">
               <div class="cat-name">${(title.replace(/</g,'&lt;'))}</div>
               <div class="cat-count">${countVal}</div>
@@ -1864,6 +1864,14 @@
         const csv = ids.join(',');
         const url = `./api/download_pdf.php?user_id=${encodeURIComponent(csv)}`;
         window.open(url, '_blank');
+        
+        // Clear all checkboxes after download is initiated
+        setTimeout(() => {
+          document.querySelectorAll('.row-checkbox:checked').forEach(cb => cb.checked = false);
+          updateSelectedCount();
+          updateBottomContainer();
+          updateSelectAllCheckbox();
+        }, 500);
       };
 
       // Bulk delete UX handlers
