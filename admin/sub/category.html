@@ -22,9 +22,9 @@
   </script>
   <style>
     .page-shell { max-width: none; width: 100%; margin: 0; padding: 16px 20px; }
-    .crumb { display:inline-flex; align-items:center; gap:8px; background:#f1f5f9; color:#334155; border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; text-decoration:none; }
-    .crumb:hover { background:#e2e8f0; }
-    .title { margin: 12px 0 18px; }
+    .crumb { display:inline-flex; align-items:center; gap:8px; color:#334155; text-decoration:none; font-size:40px; font-weight:bold; }
+    .title { margin: 12px 0 18px; display: inline-flex; align-items: center; gap: 12px; background: linear-gradient(135deg, #eb4325 0%, #f38d6e 100%); color: white; padding: 16px 24px; border-radius: 16px; font-size: 24px; font-weight: 700; box-shadow: 0 8px 20px rgba(235, 67, 37, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .title:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(235, 143, 37, 0.35); }
 
     .dash-shell { width: 90vw; max-width: none; margin: 0; padding: 24px 48px 40px; }
     @media (max-width: 600px) { .dash-shell { width: 100vw; padding: 16px; } }
@@ -34,7 +34,8 @@
     @media (max-width: 900px) { .super-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px) { .super-grid { grid-template-columns: 1fr; } }
     
-    .cat-card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(2,6,23,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; position:relative; }
+    .cat-card { background:#fff; border:1px solid #e5e7eb; border-top:4px solid #2563eb; border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(2,6,23,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; position:relative; transition:transform 0.2s ease, box-shadow 0.2s ease; }
+    .cat-card:hover { transform: translateY(-4px); box-shadow:0 15px 30px rgba(2,6,23,0.12); }
     .cat-header { display:flex; align-items:center; justify-content:space-between; width:100%; margin:35px 0 16px 0; }
     .cat-name { font-weight:700; color:#334155; }
     .cat-count { border:1px solid #e5e7eb; color:#0f172a; border-radius:9999px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; background:#f8fafc; }
@@ -45,6 +46,12 @@
     .icon-btn-sm { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#475569; cursor:pointer; }
     .icon-btn-sm:hover { background:#f1f5f9; color:#0f172a; }
     .icon-btn-sm svg { width:16px; height:16px; }
+    
+    /* Specific colors for view and delete icons */
+    .icon-btn-sm[onclick*="viewUser"] { color: #2563eb; }
+    .icon-btn-sm[onclick*="viewUser"]:hover { background: #eff6ff; }
+    .icon-btn-sm[onclick*="deleteUser"] { color: #dc2626; }
+    .icon-btn-sm[onclick*="deleteUser"]:hover { background: #fef2f2; }
 
     .add-card { cursor:pointer; background:#f8fafc; border:1px dashed #94a3b8; color:#2563eb; }
     .add-card:hover { background:#f1f5f9; }
@@ -328,7 +335,7 @@
 </head>
 <body class="dashboard">
   <div class="dash-shell">
-    <a class="crumb" href="./index.html">← Admin Dashboard</a>
+    <a class="crumb" href="./index.html">←</a>
     <h1 class="title" id="catTitle">Category</h1>
 
     <div class="super-grid" id="su-grid" aria-label="Categories grid">

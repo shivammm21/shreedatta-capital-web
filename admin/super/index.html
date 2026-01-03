@@ -70,8 +70,13 @@
       transform: scale(0.95); 
     }
     /* Super admin simplified layout */
+    .dash-title { margin-bottom: 24px; }
+    .badge { display: inline-flex; align-items: center; gap: 12px; background: linear-gradient(135deg, #eb4325 0%, #f38d6e 100%); color: white; padding: 16px 24px; border-radius: 16px; font-size: 24px; font-weight: 700; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .badge:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(235, 143, 37, 0.35); }
+    .badge span:first-child { font-size: 28px; }
     .super-summary { margin-top: 10px; margin-bottom: 16px; display:flex; gap:12px; align-items:stretch; }
-    .total-card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:16px 18px; width:max-content; min-width:220px; box-shadow:0 10px 24px rgba(2,6,23,0.08); }
+    .total-card { background:#fff; border:1px solid #e5e7eb; border-top:4px solid #10b981; border-radius:16px; padding:16px 18px; width:max-content; min-width:220px; box-shadow:0 10px 24px rgba(2,6,23,0.08); transition:transform 0.2s ease, box-shadow 0.2s ease; }
+    .total-card:hover { transform: translateY(-4px); box-shadow:0 15px 30px rgba(2,6,23,0.12); }
     .total-label { font-weight:700; color:#6b7280; text-align:center; letter-spacing:.04em; text-transform:uppercase; font-size:12px; }
     .total-value { font-size:28px; font-weight:800; color:#0f172a; text-align:center; }
 
@@ -79,7 +84,8 @@
     @media (max-width: 1100px) { .super-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 900px) { .super-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px) { .super-grid { grid-template-columns: 1fr; } }
-    .cat-card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(2,6,23,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; position:relative; }
+    .cat-card { background:#fff; border:1px solid #e5e7eb; border-top:4px solid #2563eb; border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(2,6,23,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; position:relative; transition:transform 0.2s ease, box-shadow 0.2s ease; }
+    .cat-card:hover { transform: translateY(-4px); box-shadow:0 15px 30px rgba(2,6,23,0.12); }
     .cat-name { font-weight:700; color:#334155; margin-bottom:16px; }
     .cat-count { border:1px solid #e5e7eb; color:#0f172a; border-radius:9999px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; background:#f8fafc; }
 
