@@ -29,6 +29,7 @@ try {
             s.first_name,
             s.last_name,
             s.forms_aggri_id,
+            s.mobileno,
             s.token_no,
             s.draw_name,
             s.date_time,
@@ -104,18 +105,24 @@ try {
     $fieldLabels = [
         'english' => [
             'name' => 'Name:',
+            'userid' => 'User ID:',
+            'mobile' => 'Mobile No:',
             'token' => 'Token number(s):',
             'draw' => 'Draw Name:',
             'category' => 'Draw Category:'
         ],
         'hindi' => [
             'name' => 'नाम:',
+            'userid' => 'यूज़र आईडी:',
+            'mobile' => 'मोबाइल नंबर:',
             'token' => 'टोकन संख्या:',
             'draw' => 'ड्रॉ का नाम:',
             'category' => 'ड्रॉ श्रेणी:'
         ],
         'marathi' => [
             'name' => 'नाव:',
+            'userid' => 'यूजर आयडी:',
+            'mobile' => 'मोबाईल क्र.:',
             'token' => 'टोकन क्रमांक:',
             'draw' => 'ड्रॉचे नाव:',
             'category' => 'ड्रॉ श्रेणी:'
@@ -150,22 +157,28 @@ try {
         'marathi' => '22%'     // Between English and Hindi for Marathi
     ];
     
-    // Add field labels in different languages
+    // Add field labels in different languages (final map used below)
     $fieldLabels = [
         'english' => [
             'name' => 'Name:',
+            'userid' => 'User ID:',
+            'mobile' => 'Mobile No:',
             'token' => 'Token number(s):',
             'draw' => 'Draw Name:',
             'category' => 'Draw Category:'
         ],
         'hindi' => [
             'name' => 'नाम:',
+            'userid' => 'यूज़र आईडी:',
+            'mobile' => 'मोबाइल नंबर:',
             'token' => 'टोकन संख्या:',
             'draw' => 'ड्रॉ का नाम:',
             'category' => 'ड्रॉ श्रेणी:'
         ],
         'marathi' => [
             'name' => 'नाव:',
+            'userid' => 'यूजर आयडी:',
+            'mobile' => 'मोबाईल क्र.:',
             'token' => 'टोकन क्रमांक:',
             'draw' => 'ड्रॉचे नाव:',
             'category' => 'ड्रॉ श्रेणी:'
@@ -235,9 +248,9 @@ try {
     
     // Language-specific pagination limits
     $maxTermsPerPageByLanguage = [
-        'english' => 2100,  // Original value for English
-        'hindi' => 5100,    // Hindi characters are typically wider and need more space
-        'marathi' => 4700   // Marathi falls between English and Hindi in character density
+        'english' => 1800,  // Original value for English
+        'hindi' => 5500,    // Hindi characters are typically wider and need more space
+        'marathi' => 4500   // Marathi falls between English and Hindi in character density
     ];
     
     $maxLinesPerPage = 28; // Limit for lines per page
@@ -649,6 +662,14 @@ try {
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['name']) . '</td>
                         <td>' . htmlspecialchars($userName) . '</td>
+                    </tr>
+                    <tr>
+                        <td class="label">' . htmlspecialchars($labels['userid']) . '</td>
+                        <td>' . htmlspecialchars((string)($userData['id'] ?? '')) . '</td>
+                    </tr>
+                    <tr>
+                        <td class="label">' . htmlspecialchars($labels['mobile']) . '</td>
+                        <td>' . htmlspecialchars((string)($userData['mobileno'] ?? '')) . '</td>
                     </tr>
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['token']) . '</td>
