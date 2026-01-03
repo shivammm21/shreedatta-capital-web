@@ -51,6 +51,7 @@ try {
     $first = trim((string)($_POST['firstName'] ?? ''));
     $last = trim((string)($_POST['lastName'] ?? ''));
     $draw = trim((string)($_POST['draw'] ?? ''));
+    $mobile = preg_replace('/\D+/', '', (string)($_POST['mobileNo'] ?? ''));
     $lang = trim((string)($_POST['lang'] ?? ''));
     $tokens = $_POST['tokens'] ?? [];
     if (!is_array($tokens)) { $tokens = []; }
@@ -60,6 +61,12 @@ try {
     if ($first === '' || $last === '' || $draw === '' || $tokenNo === '') {
         http_response_code(400);
         echo json_encode(['ok' => false, 'error' => 'Missing required fields']);
+        exit;
+    }
+    // Basic mobile validation (expects 10 digits)
+    if ($mobile === '' || !preg_match('/^\d{10}$/', $mobile)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Invalid mobile number']);
         exit;
     }
 
@@ -111,18 +118,24 @@ try {
         // Insert into `all-submissions` (note: hyphenated table name) including `language` column
         // Prefer inserting `form_data_id` as well; fall back if column is missing
         try {
-            // First try with both form_data_id and language columns
-            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `form_data_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?, ?)');
-            $ins->execute([$formsAggriId, $formDataId, $first, $last, $lang, $tokenNo, $draw]);
-        } catch (Throwable $eInsertWithCat) {
+            // Preferred: includes form_data_id, mobile number and language
+            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `form_data_id`, `first_name`, `last_name`, `mobileno`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+            $ins->execute([$formsAggriId, $formDataId, $first, $last, $mobile, $lang, $tokenNo, $draw]);
+        } catch (Throwable $e1) {
             try {
-                // Try without form_data_id but with language
-                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
-                $ins->execute([$formsAggriId, $first, $last, $lang, $tokenNo, $draw]);
-            } catch (Throwable $eInsertWithLang) {
-                // Final fallback: legacy schema without form_data_id or language
-                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?)');
-                $ins->execute([$formsAggriId, $first, $last, $tokenNo, $draw]);
+                // Without form_data_id, but with mobile + language
+                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `mobileno`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                $ins->execute([$formsAggriId, $first, $last, $mobile, $lang, $tokenNo, $draw]);
+            } catch (Throwable $e2) {
+                try {
+                    // Without language but with mobile
+                    $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `mobileno`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
+                    $ins->execute([$formsAggriId, $first, $last, $mobile, $tokenNo, $draw]);
+                } catch (Throwable $e3) {
+                    // Final fallback: legacy schema without mobile or language or form_data_id
+                    $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?)');
+                    $ins->execute([$formsAggriId, $first, $last, $tokenNo, $draw]);
+                }
             }
         }
         $userId = (int)$pdo->lastInsertId();

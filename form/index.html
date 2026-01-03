@@ -16,7 +16,7 @@
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
     label { display:block; font-size: 14px; color: #374151; margin-bottom: 6px; }
-    input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    input[type="text"], input[type="tel"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
     input[type="file"] { width: 100%; box-sizing: border-box; }
     .row { display:flex; align-items:center; gap: 12px; }
     .hint { font-size: 12px; color: #6b7280; }
@@ -171,6 +171,10 @@
           <div>
             <label for="lastName">Last name</label>
             <input id="lastName" name="lastName" type="text" required />
+          </div>
+          <div>
+            <label for="mobileNo">Mobile number</label>
+            <input id="mobileNo" name="mobileNo" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10 digit mobile number" required />
           </div>
           <div>
             <label for="token-0">Token number(s)</label>
@@ -420,6 +424,7 @@
     function formIsValid() {
       const first = document.getElementById('firstName').value.trim();
       const last = document.getElementById('lastName').value.trim();
+      const mobile = (document.getElementById('mobileNo')?.value || '').trim();
       const draw = document.getElementById('draw').value.trim();
       const agreed = document.getElementById('agree').checked;
       const tokenVals = Array.from(document.querySelectorAll('.token-input'))
@@ -429,7 +434,8 @@
       const ab = document.getElementById('aadBack');
       const hasFront = af && af.files && af.files.length > 0;
       const hasBack = ab && ab.files && ab.files.length > 0;
-      return first && last && draw && tokenVals.length > 0 && agreed && photo && hasFront && hasBack;
+      const isValidMobile = /^\d{10}$/.test(mobile);
+      return first && last && isValidMobile && draw && tokenVals.length > 0 && agreed && photo && hasFront && hasBack;
     }
 
     function updateSubmitState() {
@@ -442,6 +448,7 @@
     // Watch inputs and fields
     document.getElementById('firstName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
     document.getElementById('lastName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
+    document.getElementById('mobileNo').addEventListener('input', updateSubmitState);
     document.getElementById('draw').addEventListener('input', updateSubmitState);
     document.getElementById('agree').addEventListener('change', updateSubmitState);
     document.getElementById('aadFront').addEventListener('change', updateSubmitState);
@@ -652,6 +659,7 @@
       e.preventDefault();
       const first = document.getElementById('firstName').value.trim();
       const last = document.getElementById('lastName').value.trim();
+      const mobile = document.getElementById('mobileNo').value.trim();
       const draw = document.getElementById('draw').value.trim();
       const lang = document.getElementById('lang').value;
       const agreed = document.getElementById('agree').checked;
@@ -660,14 +668,15 @@
       const fBack = document.getElementById('aadBack').files;
       const tokenVals = Array.from(document.querySelectorAll('.token-input'))
         .map(i => i.value.trim()).filter(Boolean);
-      if (!first || !last || !draw || !agreed || !photoVal || !fFront?.length || !fBack?.length || tokenVals.length === 0) {
-        alert('Please complete all required fields including tokens, photo and Aadhaar.');
+      if (!first || !last || !/^\d{10}$/.test(mobile) || !draw || !agreed || !photoVal || !fFront?.length || !fBack?.length || tokenVals.length === 0) {
+        alert('Please complete all required fields including a valid 10-digit mobile number, tokens, photo and Aadhaar.');
         return;
       }
 
       const fd = new FormData();
       fd.append('firstName', first);
       fd.append('lastName', last);
+      fd.append('mobileNo', mobile);
       fd.append('draw', draw);
       fd.append('drawCategory', 'gold');
       fd.append('lang', lang);
