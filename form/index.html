@@ -288,6 +288,16 @@
   </div>
 
   <script>
+    // Helper to format Form ID as SDC-000xx
+    function formatFormId(n){
+      if(!n && n !== 0) return '';
+      const num = parseInt(n, 10);
+      if (!Number.isFinite(num) || num <= 0) return '';
+      return `SDC-${String(num).padStart(5,'0')}`;
+    }
+
+    // Store current form (configuration) ID decoded from token
+    let currentFormId = null;
     // ---- Token decode (matches server algorithm) ----
     function decodeIdFromToken(token) {
       if (!token || token.length !== 10) return 0;
@@ -460,6 +470,7 @@
       const token = (qs.get('token') || '').trim();
       if (!token) return; // no token provided
       const id = decodeIdFromToken(token);
+      currentFormId = id || null;
       if (!id) { console.warn('Invalid token'); return; }
       try {
         const res = await fetch(`/admin/super/api/forms_get.php?id=${encodeURIComponent(id)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
@@ -486,11 +497,13 @@
             });
           }
         }
-        // Update header subtitle and page title from form_name
+        // Update header subtitle and page title from form_name and show Form ID badge
         if (form.form_name) {
           const subtitleEl = document.querySelector('.form-header .content h2');
-          if (subtitleEl) subtitleEl.textContent = String(form.form_name);
-          document.title = String(form.form_name) + ' - Shree Datta Capital';
+          const nameText = String(form.form_name);
+          const idBadge = formatFormId(currentFormId);
+          if (subtitleEl) subtitleEl.textContent = idBadge ? `${nameText} (${idBadge})` : nameText;
+          document.title = nameText + ' - Shree Datta Capital';
         }
 
         // Store languages for agreement
@@ -524,10 +537,17 @@
       const metaEl = document.getElementById('successMeta');
       const closeBtn = document.getElementById('successClose');
       const dlBtn = document.getElementById('downloadPdfBtn');
-      const { userID, name, category, when, pdfUrl } = (typeof info === 'string') ? { userID: '', name: '', category: 'gold', when: '', pdfUrl: '' } : info || {};
+      const { userID, formID, name, category, when, pdfUrl } = (typeof info === 'string') ? { userID: '', formID: '', name: '', category: 'gold', when: '', pdfUrl: '' } : info || {};
       // Do not show User ID in the modal
       msgEl.textContent = 'Your response has been recorded.';
-      metaEl.textContent = [name ? `Name: ${name}` : '', category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '', when ? `Time: ${when}` : ''].filter(Boolean).join(' · ');
+      // Format Form ID as SDC-000xx when present
+      const formIdFormatted = formID ? `SDC-${String(formID).padStart(5, '0')}` : '';
+      metaEl.textContent = [
+        formIdFormatted ? `Form ID: ${formIdFormatted}` : '',
+        name ? `Name: ${name}` : '',
+        category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '',
+        when ? `Time: ${when}` : ''
+      ].filter(Boolean).join(' · ');
       // Configure Download button (prefer dynamic endpoint)
       if (dlBtn) {
         let href = '';
@@ -710,7 +730,7 @@
         }
         const when = new Date().toLocaleString(undefined, { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:true });
         const computedPdfUrl = buildPdfUrlPublic(`${first} ${last}`.trim(), draw, 'gold');
-        showSuccess({ userID: data.userID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl || computedPdfUrl });
+        showSuccess({ userID: data.userID, formID: data.formID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl || computedPdfUrl });
         e.target.reset();
         setAgreement();
         photoPreview.src = '';

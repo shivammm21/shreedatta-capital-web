@@ -419,18 +419,8 @@ try {
                 z-index: 2;
             }
             
-            /* Section title */
-            .section-title {
-                position: absolute;
-                top: var(--section-title-top);
-                left: ' . $sectionTitlePosition . ';
-                transform: translateX(-50%);
-                font-size: var(--section-title-font-size);
-                font-weight: bold;
-                color: #000;
-                text-align: center;
-                z-index: 2;
-            }
+            /* Section title hidden per requirements */
+            .section-title { display: none; }
             
             /* User info table */
             .user-info {
@@ -450,6 +440,7 @@ try {
             .user-info td {
                 padding: 4px 8px;
                 vertical-align: top;
+                font-weight: bold;
             }
             
             .user-info .token-cell {

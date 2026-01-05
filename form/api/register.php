@@ -159,7 +159,7 @@ try {
         }
 
         $pdo->commit();
-        echo json_encode(['ok' => true, 'userID' => $userId, 'message' => 'Saved']);
+        echo json_encode(['ok' => true, 'userID' => $userId, 'formID' => $formsAggriId, 'mobile' => $mobile, 'message' => 'Saved']);
     } catch (Throwable $dbE) {
         $pdo->rollBack();
         http_response_code(500);

@@ -209,10 +209,10 @@ try {
       .main-title{position:absolute;top:50px;left:50%;transform:translateX(-50%);font-size:24px;font-weight:bold;color:#000;text-transform:uppercase;letter-spacing:2px;text-align:center;z-index:2;white-space:nowrap}
       .subtitle{position:absolute;top:90px;left:50%;transform:translateX(-50%);font-size:25px;color:#000;z-index:2}
       .divider{position:absolute;top:var(--divider-top);left:50%;transform:translateX(-50%);width:730px;height:2px;background:#000;z-index:2}
-      .section-title{position:absolute;top:160px;left:34%;transform:translateX(-50%);font-size:18px;font-weight:bold;color:#000;text-align:center;z-index:2}
+      .section-title{display:none}
       .user-info{position:absolute;top:185px;left:30px;width:500px;font-size:15px;z-index:2}
       .user-info table{width:100%;border-collapse:collapse}
-      .user-info td{padding:4px 8px;vertical-align:top}
+      .user-info td{padding:4px 8px;vertical-align:top;font-weight:bold}
       .user-info .token-cell{max-width:350px;word-wrap:break-word;word-break:break-all}
       .image-spot{position:absolute;top:var(--image-spot-top);right:30px;width:140px;height:140px;border:2px solid #000;background:#f9f9f9;z-index:2;display:flex;align-items:center;justify-content:center;font-size:10px;color:#666;text-align:center;overflow:hidden}
       .user-photo{width:100%;height:100%;object-fit:cover}
