@@ -155,13 +155,13 @@ try {
         <div class="page">
           <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
           <div class="main-title">Shree Datta Capital Agreement</div>
-          <div class="subtitle">'.htmlspecialchars($formName).' Agreement (SDC-'.str_pad($formsAggriId, 5, '0', STR_PAD_LEFT).')</div>
+          <div class="subtitle">'.htmlspecialchars($formName).' Agreement</div>
           <div class="divider"></div>
           <div class="section-title" style="left: '.$sectionTitlePosition.'; transform: translateX(-50%);">'.htmlspecialchars($sectionTitle).'</div>
           <div class="user-info">
             <table>
               <tr><td class="label">'.htmlspecialchars($labels['name']).'</td><td>'.htmlspecialchars($userName).'</td></tr>
-              <tr><td class="label">'.htmlspecialchars($labels['userid']).'</td><td>'.htmlspecialchars((string)($u['id'] ?? '')).'</td></tr>
+              <tr><td class="label">'.htmlspecialchars($labels['userid']).'</td><td>'.htmlspecialchars('SDC-' . str_pad((string)($u['id'] ?? ''), 5, '0', STR_PAD_LEFT)).'</td></tr>
               <tr><td class="label">'.htmlspecialchars($labels['mobile']).'</td><td>'.htmlspecialchars((string)($u['mobileno'] ?? '')).'</td></tr>
               <tr><td class="label">'.htmlspecialchars($labels['token']).'</td><td class="token-cell">'.htmlspecialchars($tokenNumbers).'</td></tr>
               <tr><td class="label">'.htmlspecialchars($labels['draw']).'</td><td>'.htmlspecialchars($drawName).'</td></tr>

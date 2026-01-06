@@ -584,7 +584,7 @@ try {
             
             <!-- Header section -->
             <div class="main-title">Shree Datta Capital Agreement</div>
-            <div class="subtitle">' . htmlspecialchars($formName) . ' Agreement (SDC-' . str_pad($formsAggriId, 5, '0', STR_PAD_LEFT) . ')</div>
+            <div class="subtitle">' . htmlspecialchars($formName) . ' Agreement</div>
             
             <!-- Center divider line -->
             <div class="divider"></div>
@@ -601,7 +601,7 @@ try {
                     </tr>
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['userid']) . '</td>
-                        <td>' . htmlspecialchars((string)($userData['id'] ?? '')) . '</td>
+                        <td>' . htmlspecialchars('SDC-' . str_pad((string)($userData['id'] ?? ''), 5, '0', STR_PAD_LEFT)) . '</td>
                     </tr>
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['mobile']) . '</td>

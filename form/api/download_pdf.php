@@ -656,7 +656,7 @@ try {
                     </tr>
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['userid']) . '</td>
-                        <td>' . htmlspecialchars((string)($userData['id'] ?? '')) . '</td>
+                        <td>' . htmlspecialchars('SDC-' . str_pad((string)($userData['id'] ?? ''), 5, '0', STR_PAD_LEFT)) . '</td>
                     </tr>
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['mobile']) . '</td>
