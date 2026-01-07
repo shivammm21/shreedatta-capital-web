@@ -115,7 +115,7 @@ try {
     // Add field labels in different languages
     $fieldLabels = [
         'english' => [
-            'name' => 'Name:',
+            'name' => 'Customer Name:',
             'userid' => 'User ID:',
             'mobile' => 'Mobile No:',
             'token' => 'Token number(s):',
@@ -123,7 +123,7 @@ try {
             'category' => 'Draw Category:'
         ],
         'hindi' => [
-            'name' => 'नाम:',
+            'name' => 'ग्राहक नाम:',
             'userid' => 'यूज़र आईडी:',
             'mobile' => 'मोबाइल नंबर:',
             'token' => 'टोकन संख्या:',
@@ -131,7 +131,7 @@ try {
             'category' => 'ड्रॉ श्रेणी:'
         ],
         'marathi' => [
-            'name' => 'नाव:',
+            'name' => 'ग्राहक नाव:',
             'userid' => 'यूजर आयडी:',
             'mobile' => 'मोबाईल क्र.:',
             'token' => 'टोकन क्रमांक:',
@@ -281,7 +281,7 @@ try {
                 --section-title-top: 160px;
                 --section-title-font-size: 18px;
                 
-                --user-info-top: 185px;
+                --user-info-top: 155px;
                 --user-info-font-size: 15px;
                 
                 --image-spot-top: ' . $imageSpotTop . 'px;

@@ -1011,11 +1011,26 @@
           const prevText = btn ? btn.textContent : '';
           try {
             if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+            
+            // Handle dates - normalize date inputs to YYYY-MM-DD before sending
+            const norm = (v) => {
+              const s = (v || '').trim();
+              if (!s) return '';
+              if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // already ISO
+              const m = s.match(/^(\d{2})[\/\.-](\d{2})[\/\.-](\d{4})$/);
+              if (m) { const [,d,mn,y] = m; return `${y}-${mn}-${d}`; }
+              return s;
+            };
+            const editStartDate = norm(document.getElementById('editStartDate')?.value || '');
+            const editEndDate = norm(document.getElementById('editEndDate')?.value || '');
+            
             const fd = new FormData();
             fd.append('form_id', String(editingFormId));
             fd.append('form_name', name);
             fd.append('draw_names', JSON.stringify(options));
             fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
+            if (editStartDate) fd.append('startDate', editStartDate);
+            if (editEndDate) fd.append('endDate', editEndDate);
             const res = await fetch('/admin/super/api/form_update.php', { method:'POST', headers: { 'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: fd });
             const data = await res.json().catch(()=>({}));
             if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
