@@ -25,6 +25,8 @@ try {
     $form_name = isset($_POST['form_name']) ? trim((string)$_POST['form_name']) : '';
     $draw_names_raw = isset($_POST['draw_names']) ? (string)$_POST['draw_names'] : '[]';
     $languages_raw = isset($_POST['languages']) ? (string)$_POST['languages'] : '{}';
+    $startDate = isset($_POST['startDate']) ? trim((string)$_POST['startDate']) : '';
+    $endDate = isset($_POST['endDate']) ? trim((string)$_POST['endDate']) : '';
 
     $draw_names = json_decode($draw_names_raw, true);
     if (!is_array($draw_names)) { $draw_names = []; }
@@ -37,14 +39,26 @@ try {
 
     require_once __DIR__ . '/../db.php';
 
-    $sql = 'UPDATE forms_aggri SET form_name = :name, draw_names = :draws, languages = :langs WHERE id = :id LIMIT 1';
-    $st = $pdo->prepare($sql);
-    $ok = $st->execute([
+    // Build dynamic SQL to include dates only if provided
+    $fields = 'form_name = :name, draw_names = :draws, languages = :langs';
+    $params = [
         ':name' => $form_name,
         ':draws' => json_encode($draw_names, JSON_UNESCAPED_UNICODE),
         ':langs' => json_encode($languages, JSON_UNESCAPED_UNICODE),
         ':id' => $id,
-    ]);
+    ];
+    $isValidDate = function($d) {
+        if ($d === '') return false;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) return false;
+        [$y,$m,$day] = array_map('intval', explode('-', $d));
+        return checkdate($m,$day,$y);
+    };
+    if ($isValidDate($startDate)) { $fields .= ', startDate = :startDate'; $params[':startDate'] = $startDate; }
+    if ($isValidDate($endDate)) { $fields .= ', endDate = :endDate'; $params[':endDate'] = $endDate; }
+
+    $sql = 'UPDATE forms_aggri SET ' . $fields . ' WHERE id = :id LIMIT 1';
+    $st = $pdo->prepare($sql);
+    $ok = $st->execute($params);
 
     if (!$ok) {
         http_response_code(500);

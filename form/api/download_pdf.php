@@ -62,7 +62,15 @@ try {
     $tokenNumbers = $userData['token_no'] ?? '';
     $drawName = $userData['draw_name'] ?? '';
     $userLanguage = $userData['language'] ?? 'english'; // User's preferred language
-    $submissionDate = $userData['date_time'] ? date('d/m/Y', strtotime($userData['date_time'])) : date('d/m/Y');
+    // Agreement Date (from all-submissions) in DD-MM-YYYY
+    $agreementDate = $userData['date_time'] ? date('d-m-Y', strtotime($userData['date_time'])) : date('d-m-Y');
+    // Localized label for Agreement Date
+    $agreementLabelByLang = [
+        'english' => 'Agreement Date :',
+        'hindi'   => 'समझौते की तारीख :',
+        'marathi' => 'करार दिनांक :',
+    ];
+    $agreementLabel = $agreementLabelByLang['english'];
     
     // Parse languages JSON and get terms for user's language
     $languages = json_decode($userData['languages'] ?? '{}', true) ?: [];
@@ -76,6 +84,7 @@ try {
     
     // Get the correct language key for JSON
     $jsonLanguageKey = $languageMap[$userLanguage] ?? 'english';
+    $agreementLabel = $agreementLabelByLang[$jsonLanguageKey] ?? $agreementLabelByLang['english'];
     
     // Get terms in user's language with fallbacks
     $termsConditions = $languages[$jsonLanguageKey] ?? $languages['english'] ?? 'Terms and conditions not available';
@@ -673,6 +682,10 @@ try {
                     <tr>
                         <td class="label">' . htmlspecialchars($labels['category']) . '</td>
                         <td>' . htmlspecialchars($formName) . '</td>
+                    </tr>
+                    <tr>
+                        <td class="label"><strong>' . htmlspecialchars($agreementLabel) . '</strong></td>
+                        <td>' . htmlspecialchars($agreementDate) . '</td>
                     </tr>
                 </table>
             </div>

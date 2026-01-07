@@ -126,6 +126,12 @@
     label { display: block; font-size: 14px; color: #374151; margin-bottom: 6px; font-weight: 500; }
     input[type="text"], textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
     input[type="text"]:focus, textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
+    /* Styled date inputs for Create/Edit modals */
+    input[type="date"] { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; outline: none; background: #fff; color: #111827; transition: border-color .15s ease, box-shadow .15s ease; }
+    input[type="date"]:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
+    /* Improve calendar icon alignment across browsers */
+    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: opacity(0.6); }
+    input[type="date"]:hover::-webkit-calendar-picker-indicator { filter: opacity(0.9); }
     textarea { min-height: 100px; resize: vertical; }
     .dropdown-options { margin-top: 12px; }
     .option-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
@@ -516,6 +522,16 @@
         <textarea id="editMarathiRules" placeholder="Enter terms and conditions in Marathi"></textarea>
       </div>
 
+      <div class="field">
+        <label for="editStartDate">Start Date</label>
+        <input id="editStartDate" type="date" placeholder="YYYY-MM-DD">
+      </div>
+
+      <div class="field">
+        <label for="editEndDate">End Date</label>
+        <input id="editEndDate" type="date" placeholder="YYYY-MM-DD">
+      </div>
+
       <div class="modal-actions">
         <button type="button" class="btn" onclick="showEditCancelConfirmation()">Cancel</button>
         <button type="button" class="btn btn-primary" onclick="updateCategory()">Update</button>
@@ -567,6 +583,18 @@
         <div class="error-message" id="marathiRulesError">Marathi terms and conditions are required</div>
       </div>
 
+      <div class="field">
+        <label for="startDate">Start Date</label>
+        <input id="startDate" type="date" placeholder="YYYY-MM-DD">
+        <div class="error-message" id="startDateError">Start date is required</div>
+      </div>
+
+      <div class="field">
+        <label for="endDate">End Date</label>
+        <input id="endDate" type="date" placeholder="YYYY-MM-DD">
+        <div class="error-message" id="endDateError">End date is required</div>
+      </div>
+
       <div class="modal-actions">
         <button type="button" class="btn" onclick="showCancelConfirmation()">Cancel</button>
         <button type="button" class="btn btn-primary" onclick="createCategory()">Create</button>
@@ -613,6 +641,11 @@
           document.getElementById('editEnglishRules').value = langs.english || '';
           document.getElementById('editHindiRules').value = langs.hindi || '';
           document.getElementById('editMarathiRules').value = langs.marathi || '';
+          // Dates
+          const es = document.getElementById('editStartDate');
+          const ee = document.getElementById('editEndDate');
+          if (es) es.value = (form.startDate || '').slice(0,10);
+          if (ee) ee.value = (form.endDate || '').slice(0,10);
           // Options
           const container = document.getElementById('editDropdownOptions');
           container.innerHTML = '';
@@ -645,6 +678,8 @@
           const englishRules = document.getElementById('editEnglishRules').value.trim();
           const hindiRules = document.getElementById('editHindiRules').value.trim();
           const marathiRules = document.getElementById('editMarathiRules').value.trim();
+          const editStartDate = (document.getElementById('editStartDate')?.value || '').trim();
+          const editEndDate = (document.getElementById('editEndDate')?.value || '').trim();
           // Basic validation (at least name)
           if (!name) { alert('Name is required'); return; }
           try {
@@ -653,6 +688,8 @@
             fd.append('form_name', name);
             fd.append('draw_names', JSON.stringify(options));
             fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
+            if (editStartDate) fd.append('startDate', editStartDate);
+            if (editEndDate) fd.append('endDate', editEndDate);
             const res = await fetch('./api/form_update.php', { method:'POST', headers:{ 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' }, body: fd });
             const data = await res.json().catch(()=>({}));
             if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
@@ -788,6 +825,8 @@
         const englishRules = document.getElementById('englishRules').value.trim();
         const hindiRules = document.getElementById('hindiRules').value.trim();
         const marathiRules = document.getElementById('marathiRules').value.trim();
+        const startDate = document.getElementById('startDate').value.trim();
+        const endDate = document.getElementById('endDate').value.trim();
         
         // Check dropdown options
         const optionInputs = document.querySelectorAll('.option-input');
@@ -1133,10 +1172,19 @@
           const fullUrl = token ? `${location.origin}/../../form/?token=${encodeURIComponent(token)}` : '';
           const thisFormId = Number(f.id || 0);
           const countVal = (countsByFormId && thisFormId) ? Number(countsByFormId[thisFormId] || 0) : 0;
+          const fmt = (s) => {
+            const v = (s || '').slice(0,10);
+            if (!v) return '';
+            const parts = v.split('-');
+            if (parts.length === 3) { const [y,m,d] = parts; return `${d}-${m}-${y}`; }
+            return v;
+          };
+          const sd = fmt(f.startDate);
+          const ed = fmt(f.endDate);
           card.innerHTML = `
             <div class="cat-badge">SDC-${String(thisFormId || 0).padStart(5, '0')}</div>
             <div class="cat-header">
-              <div class="cat-name">${(title.replace(/</g,'&lt;'))}</div>
+              <div class="cat-name">${(title.replace(/</g,'&lt;'))}<span style="display:block;font-size:12px;color:#64748b;margin-top:2px;">${(sd&&ed)? `${sd} TO ${ed}` : (sd||ed)}</span></div>
               <div class="cat-count">${countVal}</div>
             </div>
             <div class="cat-link-container">
@@ -1213,7 +1261,9 @@
         show('englishRulesError', !englishRules);
         show('hindiRulesError', !hindiRules);
         show('marathiRulesError', !marathiRules);
-        if (!categoryName || options.length === 0 || !englishRules || !hindiRules || !marathiRules) return;
+        show('startDateError', !startDate);
+        show('endDateError', !endDate);
+        if (!categoryName || options.length === 0 || !englishRules || !hindiRules || !marathiRules || !startDate || !endDate) return;
 
         // Build payload per spec
         const fd = new FormData();
@@ -1221,6 +1271,8 @@
         fd.append('form_name', categoryName); // Category Name -> form_name
         options.forEach(o => fd.append('draw_names[]', o)); // Dropdown Options as JSON array
         fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
+        fd.append('startDate', startDate);
+        fd.append('endDate', endDate);
         // Optional link support later
         // fd.append('form_link', '');
 

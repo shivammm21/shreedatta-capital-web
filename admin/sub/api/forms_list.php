@@ -46,7 +46,7 @@ try {
     }
 
     // Fetch forms
-    $st = $pdo->prepare('SELECT id, catogory_id, draw_names, languages, form_name, form_link FROM forms_aggri WHERE catogory_id = ? ORDER BY id DESC');
+    $st = $pdo->prepare('SELECT id, catogory_id, draw_names, languages, form_name, form_link, startDate, endDate FROM forms_aggri WHERE catogory_id = ? ORDER BY id DESC');
     $st->execute([$categoryId]);
     $forms = [];
     while ($r = $st->fetch()) {
@@ -57,6 +57,8 @@ try {
             'languages' => json_decode($r['languages'] ?? '{}', true) ?: ['english'=>'','hindi'=>'','marathi'=>''],
             'form_name' => (string)($r['form_name'] ?? ''),
             'form_link' => (string)($r['form_link'] ?? ''),
+            'startDate' => (string)($r['startDate'] ?? ''),
+            'endDate' => (string)($r['endDate'] ?? ''),
         ];
     }
 

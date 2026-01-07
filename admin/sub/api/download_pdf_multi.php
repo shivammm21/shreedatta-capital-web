@@ -151,6 +151,13 @@ try {
         $sep = $first ? '' : '<div style="page-break-before: always;"></div>';
         $first = false;
 
+        $agreementDate = $u['date_time'] ? date('d-m-Y', strtotime($u['date_time'])) : date('d-m-Y');
+        $agreementLabelByLang = [
+          'english' => 'Agreement Date :',
+          'hindi' => 'समझौते की तारीख :',
+          'marathi' => 'करार दिनांक :',
+        ];
+        $agreementLabel = $agreementLabelByLang[$lk] ?? $agreementLabelByLang['english'];
         $pages .= $sep.'
         <div class="page">
           <div class="watermark"><img class="watermark-img" src="../../../asset/images/Logo.png" alt="Logo"></div>
@@ -166,6 +173,7 @@ try {
               <tr><td class="label">'.htmlspecialchars($labels['token']).'</td><td class="token-cell">'.htmlspecialchars($tokenNumbers).'</td></tr>
               <tr><td class="label">'.htmlspecialchars($labels['draw']).'</td><td>'.htmlspecialchars($drawName).'</td></tr>
               <tr><td class="label">'.htmlspecialchars($labels['category']).'</td><td>'.htmlspecialchars($formName).'</td></tr>
+              <tr><td class="label"><strong>'.htmlspecialchars($agreementLabel).'</strong></td><td>'.htmlspecialchars($agreementDate).'</td></tr>
             </table>
           </div>
           <div class="image-spot">'.($photoData ? '<img src="'.$photoData.'" alt="User Photo" class="user-photo">' : 'User Photo<br>Not Available').'</div>

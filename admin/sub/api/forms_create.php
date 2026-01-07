@@ -29,10 +29,24 @@ try {
     $drawNamesRaw = isset($_POST['draw_names']) ? $_POST['draw_names'] : '[]';
     $languagesRaw = isset($_POST['languages']) ? $_POST['languages'] : '{}';
     $formLink = isset($_POST['form_link']) ? trim((string)$_POST['form_link']) : '';
+    $startDate = isset($_POST['startDate']) ? trim((string)$_POST['startDate']) : '';
+    $endDate = isset($_POST['endDate']) ? trim((string)$_POST['endDate']) : '';
 
-    if ($categoryName === '' || $formName === '') {
+    if ($categoryName === '' || $formName === '' || $startDate === '' || $endDate === '') {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'error' => 'Category and form name are required']);
+        echo json_encode(['ok' => false, 'error' => 'Category, form name, start date and end date are required']);
+        exit;
+    }
+
+    // Basic date validation (YYYY-MM-DD)
+    $isValidDate = function($d) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) return false;
+        [$y,$m,$day] = array_map('intval', explode('-', $d));
+        return checkdate($m,$day,$y);
+    };
+    if (!$isValidDate($startDate) || !$isValidDate($endDate)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Invalid date format. Use YYYY-MM-DD']);
         exit;
     }
 
@@ -76,13 +90,15 @@ try {
     }
 
     // Insert into forms_aggri
-    $ins = $pdo->prepare('INSERT INTO forms_aggri (`catogory_id`, `draw_names`, `languages`, `form_name`, `form_link`) VALUES (?, ?, ?, ?, ?)');
+    $ins = $pdo->prepare('INSERT INTO forms_aggri (`catogory_id`, `draw_names`, `languages`, `form_name`, `form_link`, `startDate`, `endDate`) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $ins->execute([
         $categoryId,
         json_encode(array_values($drawNames), JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),
         json_encode($languages, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),
         $formName,
         $formLink,
+        $startDate,
+        $endDate,
     ]);
     $newId = (int)$pdo->lastInsertId();
 

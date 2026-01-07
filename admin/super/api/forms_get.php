@@ -15,7 +15,7 @@ try {
 
     require_once __DIR__ . '/../db.php'; // $pdo
 
-    $st = $pdo->prepare('SELECT id, catogory_id, draw_names, languages, form_name, form_link FROM forms_aggri WHERE id = ? LIMIT 1');
+    $st = $pdo->prepare('SELECT id, catogory_id, draw_names, languages, form_name, form_link, startDate, endDate FROM forms_aggri WHERE id = ? LIMIT 1');
     $st->execute([$id]);
     $r = $st->fetch();
     if (!$r) {
@@ -33,6 +33,8 @@ try {
             'languages' => json_decode($r['languages'] ?? '{}', true) ?: ['english'=>'','hindi'=>'','marathi'=>''],
             'form_name' => (string)($r['form_name'] ?? ''),
             'form_link' => (string)($r['form_link'] ?? ''),
+            'startDate' => (string)($r['startDate'] ?? ''),
+            'endDate' => (string)($r['endDate'] ?? ''),
         ],
     ]);
     exit;
