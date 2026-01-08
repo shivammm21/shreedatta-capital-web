@@ -39,6 +39,39 @@ try {
 
     require_once __DIR__ . '/../db.php';
 
+    // Normalize date strings to YYYY-MM-DD if possible
+    $normalizeDate = function(string $s): string {
+        $s = trim($s);
+        if ($s === '') return '';
+        
+        // already ISO format (YYYY-MM-DD)
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) return $s;
+        
+        // Handle MM/DD/YYYY format (common in US)
+        if (preg_match('/^(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{4})$/', $s, $m)) {
+            $month = (int)$m[1];
+            $day = (int)$m[2];
+            $year = (int)$m[3];
+            
+            // If month > 12, assume it's DD/MM/YYYY format
+            if ($month > 12) {
+                // Swap day and month
+                $temp = $month;
+                $month = $day;
+                $day = $temp;
+            }
+            
+            // Validate the date
+            if (checkdate($month, $day, $year)) {
+                return sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+        }
+        
+        return $s; // fallback (may fail validation below)
+    };
+    $startDate = $normalizeDate($startDate);
+    $endDate = $normalizeDate($endDate);
+
     // Build dynamic SQL to include dates only if provided
     $fields = 'form_name = :name, draw_names = :draws, languages = :langs';
     $params = [
@@ -53,8 +86,14 @@ try {
         [$y,$m,$day] = array_map('intval', explode('-', $d));
         return checkdate($m,$day,$y);
     };
-    if ($isValidDate($startDate)) { $fields .= ', startDate = :startDate'; $params[':startDate'] = $startDate; }
-    if ($isValidDate($endDate)) { $fields .= ', endDate = :endDate'; $params[':endDate'] = $endDate; }
+    if ($isValidDate($startDate)) { 
+        $fields .= ', startDate = :startDate'; 
+        $params[':startDate'] = $startDate; 
+    }
+    if ($isValidDate($endDate)) { 
+        $fields .= ', endDate = :endDate'; 
+        $params[':endDate'] = $endDate; 
+    }
 
     $sql = 'UPDATE forms_aggri SET ' . $fields . ' WHERE id = :id LIMIT 1';
     $st = $pdo->prepare($sql);

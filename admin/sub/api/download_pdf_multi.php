@@ -45,7 +45,7 @@ try {
         // Add field labels in different languages
         $fieldLabels = [
             'english' => [
-                'name' => 'Name:',
+                'name' => 'Customer Name:',
                 'userid' => 'User ID:',
                 'mobile' => 'Mobile No:',
                 'token' => 'Token number(s):',
@@ -53,7 +53,7 @@ try {
                 'category' => 'Draw Category:'
             ],
             'hindi' => [
-                'name' => 'नाम:',
+                'name' => 'ग्राहक नाम:',
                 'userid' => 'यूज़र आईडी:',
                 'mobile' => 'मोबाइल नंबर:',
                 'token' => 'टोकन संख्या:',
@@ -61,7 +61,7 @@ try {
                 'category' => 'ड्रॉ श्रेणी:'
             ],
             'marathi' => [
-                'name' => 'नाव:',
+                'name' => 'ग्राहक नाव:',
                 'userid' => 'यूजर आयडी:',
                 'mobile' => 'मोबाईल क्र.:',
                 'token' => 'टोकन क्रमांक:',
@@ -218,7 +218,7 @@ try {
       .subtitle{position:absolute;top:90px;left:50%;transform:translateX(-50%);font-size:25px;color:#000;z-index:2}
       .divider{position:absolute;top:var(--divider-top);left:50%;transform:translateX(-50%);width:730px;height:2px;background:#000;z-index:2}
       .section-title{display:none}
-      .user-info{position:absolute;top:185px;left:30px;width:500px;font-size:15px;z-index:2}
+      .user-info{position:absolute;top:155px;left:30px;width:500px;font-size:15px;z-index:2}
       .user-info table{width:100%;border-collapse:collapse}
       .user-info td{padding:4px 8px;vertical-align:top;font-weight:bold}
       .user-info .token-cell{max-width:350px;word-wrap:break-word;word-break:break-all}
