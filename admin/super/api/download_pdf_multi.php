@@ -85,9 +85,9 @@ try {
         
         // Language-specific pagination limits
         $maxTermsPerPageByLanguage = [
-            'english' => 2100,  // Original value for English
-            'hindi' => 5100,    // Hindi characters are typically wider and need more space
-            'marathi' => 4700   // Marathi falls between English and Hindi in character density
+            'english' => 1800,  // Original value for English
+            'hindi' => 5500,    // Hindi characters are typically wider and need more space
+            'marathi' => 4500   // Marathi falls between English and Hindi in character density
         ];
         
         $maxTermsPerPage = $maxTermsPerPageByLanguage[$lk] ?? $maxTermsPerPageByLanguage['english'];
