@@ -1,234 +1,60 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Category - Shreedatta Capital</title>
   <meta name="description" content="Category details" />
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📁</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📁</text></svg>">
   <link rel="stylesheet" href="../../asset/css/style.css">
+  <script>
+    // SUB auth guard: ensure only logged-in SUB users can view this page
+    (function(){
+      fetch('auth.php', { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => {
+          if (!d || d.ok !== true) throw new Error('unauthed');
+        })
+        .catch(() => {
+          window.location.href = 'index.html';
+        });
+    })();
+  </script>
   <style>
-    .page-shell {
-      max-width: none;
-      width: 100%;
-      margin: 0;
-      padding: 16px 20px;
-    }
+    .page-shell { max-width: none; width: 100%; margin: 0; padding: 16px 20px; }
+    .crumb { display:inline-flex; align-items:center; gap:8px; color:#334155; text-decoration:none; font-size:40px; font-weight:bold; }
+    .title { margin: 12px 0 18px; display: inline-flex; align-items: center; gap: 12px; background: linear-gradient(135deg, #eb4325 0%, #f38d6e 100%); color: white; padding: 16px 24px; border-radius: 16px; font-size: 24px; font-weight: 700; box-shadow: 0 8px 20px rgba(235, 67, 37, 0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .title:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(235, 143, 37, 0.35); }
 
-    .crumb {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: #334155;
-      text-decoration: none;
-      font-size: 40px;
-      font-weight: bold;
-    }
+    .dash-shell { width: 90vw; max-width: none; margin: 0; padding: 24px 48px 40px; }
+    @media (max-width: 600px) { .dash-shell { width: 100vw; padding: 16px; } }
 
-    .title {
-      margin: 12px 0 18px;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      background: linear-gradient(135deg, #eb4325 0%, #f38d6e 100%);
-      color: white;
-      padding: 16px 24px;
-      border-radius: 16px;
-      font-size: 24px;
-      font-weight: 700;
-      box-shadow: 0 8px 20px rgba(235, 67, 37, 0.25);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
+    .super-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:16px; padding-top:8px; }
+    @media (max-width: 1100px) { .super-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 900px) { .super-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .super-grid { grid-template-columns: 1fr; } }
+    
+    .cat-card { background:#fff; border:1px solid #e5e7eb; border-top:4px solid #2563eb; border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(2,6,23,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; position:relative; transition:transform 0.2s ease, box-shadow 0.2s ease; }
+    .cat-card:hover { transform: translateY(-4px); box-shadow:0 15px 30px rgba(2,6,23,0.12); }
+    .cat-header { display:flex; align-items:center; justify-content:space-between; width:100%; margin:35px 0 16px 0; }
+    .cat-name { font-weight:700; color:#334155; }
+    .cat-badge { position:absolute; top:8px; left:8px; background:#eef2ff; border:1px solid #e5e7eb; color:#1d4ed8; border-radius:9999px; padding:4px 10px; font-size:14px; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .cat-count { border:1px solid #e5e7eb; color:#0f172a; border-radius:9999px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; background:#f8fafc; }
+    .cat-link { background:#eef2ff; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; color:#2563eb; text-decoration:none; font-size:13px; text-align:center; width:100%; box-sizing:border-box; transition:background .15s ease, color .15s ease, box-shadow .15s ease; }
+    .cat-link:hover { background:#e0e7ff; }
 
-    .title:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(235, 143, 37, 0.35);
-    }
+    .cat-actions { position:absolute; top:8px; right:8px; display:flex; gap:6px; }
+    .icon-btn-sm { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#475569; cursor:pointer; }
+    .icon-btn-sm:hover { background:#f1f5f9; color:#0f172a; }
+    .icon-btn-sm svg { width:16px; height:16px; }
+    
+    /* Specific colors for view icons only */
+    .icon-btn-sm[onclick*="viewUser"] { color: #2563eb; }
+    .icon-btn-sm[onclick*="viewUser"]:hover { background: #eff6ff; }
 
-    .dash-shell {
-      width: 90vw;
-      max-width: none;
-      margin: 0;
-      padding: 24px 48px 40px;
-    }
-
-    @media (max-width: 600px) {
-      .dash-shell {
-        width: 100vw;
-        padding: 16px;
-      }
-    }
-
-    .super-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      padding-top: 8px;
-    }
-
-    @media (max-width: 1100px) {
-      .super-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    @media (max-width: 900px) {
-      .super-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 560px) {
-      .super-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .cat-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-top: 4px solid #2563eb;
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 160px;
-      position: relative;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .cat-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 15px 30px rgba(2, 6, 23, 0.12);
-    }
-
-    .cat-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      margin: 35px 0 16px 0;
-    }
-
-    .cat-name {
-      font-weight: 700;
-      color: #334155;
-    }
-
-    .cat-badge {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      background: #eef2ff;
-      border: 1px solid #e5e7eb;
-      color: #1d4ed8;
-      border-radius: 9999px;
-      padding: 4px 10px;
-      font-size: 14px;
-      font-weight: 700;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-    }
-
-    .cat-count {
-      border: 1px solid #e5e7eb;
-      color: #0f172a;
-      border-radius: 9999px;
-      width: 64px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 20px;
-      background: #f8fafc;
-    }
-
-    .cat-link {
-      background: #eef2ff;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 8px 12px;
-      color: #2563eb;
-      text-decoration: none;
-      font-size: 13px;
-      text-align: center;
-      width: 100%;
-      box-sizing: border-box;
-      transition: background .15s ease, color .15s ease, box-shadow .15s ease;
-    }
-
-    .cat-link:hover {
-      background: #e0e7ff;
-    }
-
-    .cat-actions {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      display: flex;
-      gap: 6px;
-    }
-
-    .icon-btn-sm {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #475569;
-      cursor: pointer;
-    }
-
-    .icon-btn-sm:hover {
-      background: #f1f5f9;
-      color: #0f172a;
-    }
-
-    .icon-btn-sm svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    /* Specific colors for view and delete icons */
-    .icon-btn-sm[onclick*="viewUser"] {
-      color: #2563eb;
-    }
-
-    .icon-btn-sm[onclick*="viewUser"]:hover {
-      background: #eff6ff;
-    }
-
-    .icon-btn-sm[onclick*="deleteUser"] {
-      color: #dc2626;
-    }
-
-    .icon-btn-sm[onclick*="deleteUser"]:hover {
-      background: #fef2f2;
-    }
-
-    .add-card {
-      cursor: pointer;
-      background: #f8fafc;
-      border: 1px dashed #94a3b8;
-      color: #2563eb;
-    }
-
-    .add-card:hover {
-      background: #f1f5f9;
-    }
-
-    .add-plus {
-      font-size: 56px;
-      line-height: 1;
-    }
+    .add-card { cursor:pointer; background:#f8fafc; border:1px dashed #94a3b8; color:#2563eb; }
+    .add-card:hover { background:#f1f5f9; }
+    .add-plus { font-size:56px; line-height:1; }
 
     .cat-link-container {
       display: flex;
@@ -286,468 +112,145 @@
     }
 
     /* Modal styles */
-    .hidden {
-      display: none !important;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 1000;
-    }
-
-    .modal-box {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 24px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      position: relative;
-    }
-
-    .modal-title {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 20px;
-      color: #111827;
-    }
-
-    .modal-text {
-      color: #374151;
-      font-size: 14px;
-      margin: 0 0 16px;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      margin-top: 24px;
-    }
-
-    .btn {
-      appearance: none;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform .05s ease, box-shadow .15s ease, background .2s ease;
-    }
-
-    .btn-primary {
-      background: linear-gradient(180deg, #2563eb, #1d4ed8);
-      color: white;
-      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
-    }
-
-    .btn-primary:hover {
-      filter: brightness(1.05);
-    }
-
-    .btn-primary:active {
-      transform: translateY(1px);
-    }
-
-    .field {
-      margin: 16px 0;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      color: #374151;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-
-    input[type="text"],
-    textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 14px;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color .15s ease, box-shadow .15s ease;
-    }
-
-    input[type="text"]:focus,
-    textarea:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
-    }
-
+    .hidden { display: none !important; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+    .modal-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); position: relative; }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #111827; }
+    .modal-text { color: #374151; font-size: 14px; margin: 0 0 16px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+    .btn { appearance: none; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px; font-weight: 600; cursor: pointer; transition: transform .05s ease, box-shadow .15s ease, background .2s ease; }
+    .btn-primary { background: linear-gradient(180deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25); }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-primary:active { transform: translateY(1px); }
+    .field { margin: 16px 0; }
+    label { display: block; font-size: 14px; color: #374151; margin-bottom: 6px; font-weight: 500; }
+    input[type="text"], textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+    input[type="text"]:focus, textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
     /* Styled date inputs for Create/Edit modals */
-    input[type="date"] {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 14px;
-      box-sizing: border-box;
-      outline: none;
-      background: #fff;
-      color: #111827;
-      transition: border-color .15s ease, box-shadow .15s ease;
-    }
-
-    input[type="date"]:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
-    }
-
+    input[type="date"] { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; outline: none; background: #fff; color: #111827; transition: border-color .15s ease, box-shadow .15s ease; }
+    input[type="date"]:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
     /* Improve calendar icon alignment across browsers */
-    input[type="date"]::-webkit-calendar-picker-indicator {
-      cursor: pointer;
-      filter: opacity(0.6);
-    }
-
-    input[type="date"]:hover::-webkit-calendar-picker-indicator {
-      filter: opacity(0.9);
-    }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .dropdown-options {
-      margin-top: 12px;
-    }
-
-    .option-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-      align-items: center;
-    }
-
-    .option-input {
-      flex: 1;
-    }
-
-    .remove-btn {
-      appearance: none;
-      border: none;
-      background: #ef4444;
-      color: white;
-      border-radius: 6px;
-      width: 28px;
-      height: 28px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .remove-btn:hover {
-      background: #dc2626;
-    }
-
-    .add-option-btn {
-      appearance: none;
-      border: 1px solid #e5e7eb;
-      background: #f8fafc;
-      color: #374151;
-      border-radius: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .add-option-btn:hover {
-      background: #f1f5f9;
-    }
+    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: opacity(0.6); }
+    input[type="date"]:hover::-webkit-calendar-picker-indicator { filter: opacity(0.9); }
+    textarea { min-height: 100px; resize: vertical; }
+    .dropdown-options { margin-top: 12px; }
+    .option-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .option-input { flex: 1; }
+    .remove-btn { appearance: none; border: none; background: #ef4444; color: white; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+    .remove-btn:hover { background: #dc2626; }
+    .add-option-btn { appearance: none; border: 1px solid #e5e7eb; background: #f8fafc; color: #374151; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .add-option-btn:hover { background: #f1f5f9; }
 
     /* Cancel modal with higher z-index and reduced width */
-    #cancelModal {
-      z-index: 2000;
-    }
-
-    #cancelModal .modal-box {
-      max-width: 400px;
-    }
+    #cancelModal { z-index: 2000; }
+    #cancelModal .modal-box { max-width: 400px; }
 
     /* Modal close button */
-    .modal-close-btn {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      appearance: none;
-      border: none;
-      background: #f3f4f6;
-      color: #6b7280;
-      border-radius: 8px;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: bold;
-      z-index: 10;
+    .modal-close-btn { 
+      position: absolute; 
+      top: 16px; 
+      right: 16px; 
+      appearance: none; 
+      border: none; 
+      background: #f3f4f6; 
+      color: #6b7280; 
+      border-radius: 8px; 
+      width: 32px; 
+      height: 32px; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 20px; 
+      font-weight: bold; 
+      z-index: 10; 
       transition: all 0.2s ease;
     }
-
-    .modal-close-btn:hover {
-      background: #e5e7eb;
-      color: #374151;
+    .modal-close-btn:hover { 
+      background: #e5e7eb; 
+      color: #374151; 
     }
-
-    .modal-close-btn:active {
-      transform: scale(0.95);
+    .modal-close-btn:active { 
+      transform: scale(0.95); 
     }
 
     /* Enhanced modal styles */
-    .modal-header {
-      margin-bottom: 16px;
-    }
-
-    .modal-content {
-      margin-bottom: 20px;
-    }
-
+    .modal-header { margin-bottom: 16px; }
+    .modal-content { margin-bottom: 20px; }
+    
     /* Delete submission modal specific styles */
-    #deleteSubmissionModal .modal-box {
+    #deleteSubmissionModal .modal-box { 
       animation: modalSlideIn 0.2s ease-out;
     }
-
+    
     @keyframes modalSlideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.95);
+      from { 
+        opacity: 0; 
+        transform: translateY(-20px) scale(0.95); 
       }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+      to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
       }
     }
-
+    
     /* Button enhancements */
-    .btn {
+    .btn { 
       transition: all 0.15s ease;
       font-weight: 500;
     }
-
-    .btn:hover {
+    .btn:hover { 
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     /* Error message styles */
-    .error-message {
-      color: #dc2626;
-      font-size: 12px;
-      margin-top: 4px;
-      display: none;
+    .error-message { 
+      color: #dc2626; 
+      font-size: 12px; 
+      margin-top: 4px; 
+      display: none; 
     }
-
-    .error-message.show {
-      display: block;
+    .error-message.show { 
+      display: block; 
     }
-
     .field.error input[type="text"],
-    .field.error textarea {
-      border-color: #dc2626;
+    .field.error textarea { 
+      border-color: #dc2626; 
     }
 
     /* Search and filters section */
-    .search-section {
-      margin-top: 32px;
-      text-align: center;
-    }
-
-    .search-bar {
-      width: 100%;
-      max-width: 400px;
-      padding: 12px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 14px;
-      outline: none;
-      transition: border-color .15s ease, box-shadow .15s ease;
-    }
-
-    .search-bar:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
-    }
-
-    .filters-section {
-      margin-top: 16px;
-      text-align: center;
-    }
-
-    .filter-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .filter-chip {
-      appearance: none;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      color: #374151;
-      border-radius: 20px;
-      padding: 8px 16px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all .15s ease;
-      white-space: nowrap;
-    }
-
-    .filter-chip:hover {
-      background: #f8fafc;
-      border-color: #d1d5db;
-    }
-
-    .filter-chip.active {
-      background: #2563eb;
-      color: white;
-      border-color: #2563eb;
-    }
-
-    .table-section {
-      margin-top: 24px;
-    }
-
-    .results-table {
-      width: 100%;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-
-    .table th:nth-child(1),
-    .table td:nth-child(1) {
-      width: 5%;
-      text-align: center;
-    }
-
-    .table th:nth-child(2),
-    .table td:nth-child(2) {
-      width: 24%;
-      text-align: left;
-    }
-
-    .table th:nth-child(3),
-    .table td:nth-child(3) {
-      width: 16%;
-      text-align: left;
-    }
-
-    .table th:nth-child(4),
-    .table td:nth-child(4) {
-      width: 20%;
-      text-align: left;
-    }
-
-    .table th:nth-child(5),
-    .table td:nth-child(5) {
-      width: 20%;
-      text-align: left;
-    }
-
-    .table th:nth-child(6),
-    .table td:nth-child(6) {
-      width: 15%;
-      text-align: right;
-    }
-
-    .table th {
-      background: #f8fafc;
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .table td {
-      padding: 12px 16px;
-      font-size: 14px;
-      color: #1f2937;
-      border-bottom: 1px solid #f3f4f6;
-    }
-
-    .table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .table tr:hover {
-      background: #f9fafb;
-    }
-
-    .action-btn {
-      appearance: none;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      color: #374151;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all .15s ease;
-    }
-
-    .action-btn:hover {
-      background: #f8fafc;
-      border-color: #d1d5db;
-    }
-
-    .action-btn.edit {
-      color: #2563eb;
-      border-color: #2563eb;
-    }
-
-    .action-btn.edit:hover {
-      background: #eff6ff;
-    }
-
-    .action-btn.delete {
-      color: #dc2626;
-      border-color: #dc2626;
-    }
-
-    .action-btn.delete:hover {
-      background: #fef2f2;
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 40px;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
+    .search-section { margin-top: 32px; text-align: center; }
+    .search-bar { width: 100%; max-width: 400px; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+    .search-bar:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
+    
+    .filters-section { margin-top: 16px; text-align: center; }
+    .filter-row { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .filter-chip { appearance: none; border: 1px solid #e5e7eb; background: #fff; color: #374151; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all .15s ease; white-space: nowrap; }
+    .filter-chip:hover { background: #f8fafc; border-color: #d1d5db; }
+    .filter-chip.active { background: #2563eb; color: white; border-color: #2563eb; }
+    
+    .table-section { margin-top: 24px; }
+    .results-table { width: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .table th:nth-child(1), .table td:nth-child(1) { width: 5%; text-align: center; }
+    .table th:nth-child(2), .table td:nth-child(2) { width: 24%; text-align: left; }
+    .table th:nth-child(3), .table td:nth-child(3) { width: 16%; text-align: left; }
+    .table th:nth-child(4), .table td:nth-child(4) { width: 20%; text-align: left; }
+    .table th:nth-child(5), .table td:nth-child(5) { width: 20%; text-align: left; }
+    .table th:nth-child(6), .table td:nth-child(6) { width: 15%; text-align: right; }
+    .table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; }
+    .table td { padding: 12px 16px; font-size: 14px; color: #1f2937; border-bottom: 1px solid #f3f4f6; }
+    .table tr:last-child td { border-bottom: none; }
+    .table tr:hover { background: #f9fafb; }
+    .action-btn { appearance: none; border: 1px solid #e5e7eb; background: #fff; color: #374151; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: all .15s ease; }
+    .action-btn:hover { background: #f8fafc; border-color: #d1d5db; }
+    .action-btn.edit { color: #2563eb; border-color: #2563eb; }
+    .action-btn.edit:hover { background: #eff6ff; }
+    .action-btn.delete { color: #dc2626; border-color: #dc2626; }
+    .action-btn.delete:hover { background: #fef2f2; }
+    .no-results { text-align: center; padding: 40px; color: #6b7280; font-size: 14px; }
+    
     /* Checkbox styles */
     .row-checkbox {
       width: 18px;
@@ -755,14 +258,14 @@
       accent-color: #2563eb;
       cursor: pointer;
     }
-
+    
     .select-all-checkbox {
       width: 18px;
       height: 18px;
       accent-color: #2563eb;
       cursor: pointer;
     }
-
+    
     /* Bottom action container */
     .bottom-action-container {
       position: fixed;
@@ -771,8 +274,8 @@
       right: 0;
       background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
       padding: 16px 24px;
       display: flex;
       align-items: center;
@@ -780,17 +283,17 @@
       transition: bottom 0.3s ease;
       z-index: 1000;
     }
-
+    
     .bottom-action-container.show {
       bottom: 0;
     }
-
+    
     .selected-count {
       color: white;
       font-size: 14px;
       font-weight: 500;
     }
-
+    
     .download-btn {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       border: none;
@@ -805,17 +308,16 @@
       gap: 8px;
       transition: all 0.2s ease;
     }
-
+    
     .download-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
-
+    
     .download-btn svg {
       width: 16px;
       height: 16px;
     }
-
     .bulk-delete-btn {
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
       border: none;
@@ -830,26 +332,13 @@
       gap: 8px;
       transition: all 0.2s ease;
     }
-
-    .bulk-delete-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
-
-    .bulk-delete-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
+    .bulk-delete-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+    .bulk-delete-btn svg { width:16px; height:16px; }
+    
     /* Action icons container */
-    .action-icons {
-      display: flex;
-      gap: 6px;
-      justify-content: flex-end;
-    }
+    .action-icons { display: flex; gap: 6px; justify-content: flex-end; }
   </style>
 </head>
-
 <body class="dashboard">
   <div class="dash-shell">
     <a class="crumb" href="./index.html">←</a>
@@ -869,9 +358,6 @@
     <div class="filters-section">
       <div class="filter-row" id="filterRow">
         <!-- Filter chips will be dynamically added here -->
-      </div>
-      <div class="filter-row" id="drawFilterRow" style="margin-top: 8px;">
-        <!-- Draw filter chips will be dynamically added here -->
       </div>
     </div>
 
@@ -907,8 +393,7 @@
       <p class="modal-text">Are you sure you want to cancel? Any unsaved changes will be lost.</p>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeCancelModal()">Keep Editing</button>
-        <button type="button" class="btn btn-primary" style="background:#dc2626;"
-          onclick="confirmCancel()">Discard</button>
+        <button type="button" class="btn btn-primary" style="background:#dc2626;" onclick="confirmCancel()">Discard</button>
       </div>
     </div>
   </div>
@@ -935,12 +420,10 @@
     <div class="modal-box">
       <button type="button" class="modal-close-btn" onclick="closeSubDeleteModal()" title="Close">×</button>
       <div id="subDeleteTitle" class="modal-title">Delete Container</div>
-      <p class="modal-text">This will permanently delete the container and all of its user submissions. This action
-        cannot be undone.</p>
+      <p class="modal-text">This will permanently delete the container and all of its user submissions. This action cannot be undone.</p>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeSubDeleteModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" style="background:#dc2626;"
-          onclick="confirmSubDelete()">Delete</button>
+        <button type="button" class="btn btn-primary" style="background:#dc2626;" onclick="confirmSubDelete()">Delete</button>
       </div>
     </div>
   </div>
@@ -952,20 +435,17 @@
       <p class="modal-text">Are you sure you want to delete this category? This action cannot be undone.</p>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeDeleteModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" style="background:#dc2626;"
-          onclick="confirmDelete()">Delete</button>
+        <button type="button" class="btn btn-primary" style="background:#dc2626;" onclick="confirmDelete()">Delete</button>
       </div>
     </div>
   </div>
 
   <!-- Delete Submission Modal -->
-  <div id="deleteSubmissionModal" class="modal hidden" role="dialog" aria-modal="true"
-    aria-labelledby="deleteSubmissionTitle">
+  <div id="deleteSubmissionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="deleteSubmissionTitle">
     <div class="modal-box" style="max-width: 480px;">
       <div class="modal-header">
         <div id="deleteSubmissionTitle" class="modal-title">
-          <svg style="width: 24px; height: 24px; color: #dc2626; margin-right: 8px; vertical-align: middle;"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg style="width: 24px; height: 24px; color: #dc2626; margin-right: 8px; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="15" y1="9" x2="9" y2="15"></line>
             <line x1="9" y1="9" x2="15" y2="15"></line>
@@ -977,31 +457,24 @@
         <p class="modal-text" style="font-size: 16px; line-height: 1.5; margin-bottom: 16px;">
           Are you sure you want to delete this submission permanently?
         </p>
-        <div
-          style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
           <div style="display: flex; align-items: flex-start;">
-            <svg style="width: 20px; height: 20px; color: #dc2626; margin-right: 8px; margin-top: 2px; flex-shrink: 0;"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg style="width: 20px; height: 20px; color: #dc2626; margin-right: 8px; margin-top: 2px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
               <line x1="12" y1="9" x2="12" y2="13"></line>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
             <div>
-              <p style="color: #991b1b; font-weight: 600; margin: 0 0 4px 0; font-size: 14px;">This action cannot be
-                undone</p>
-              <p style="color: #7f1d1d; margin: 0; font-size: 13px;">This will permanently remove the submission and all
-                associated documents including photos and Aadhaar images.</p>
+              <p style="color: #991b1b; font-weight: 600; margin: 0 0 4px 0; font-size: 14px;">This action cannot be undone</p>
+              <p style="color: #7f1d1d; margin: 0; font-size: 13px;">This will permanently remove the submission and all associated documents including photos and Aadhaar images.</p>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn" onclick="closeDeleteSubmissionModal()"
-          style="min-width: 80px;">Cancel</button>
-        <button type="button" class="btn btn-primary" style="background:#dc2626; min-width: 80px;"
-          onclick="confirmDeleteSubmission()">
-          <svg style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="btn" onclick="closeDeleteSubmissionModal()" style="min-width: 80px;">Cancel</button>
+        <button type="button" class="btn btn-primary" style="background:#dc2626; min-width: 80px;" onclick="confirmDeleteSubmission()">
+          <svg style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3,6 5,6 21,6"></polyline>
             <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
             <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -1018,7 +491,7 @@
     <div class="modal-box">
       <button type="button" class="modal-close-btn" onclick="showEditCancelConfirmation()" title="Close">×</button>
       <div id="editCategoryTitle" class="modal-title">Edit Category</div>
-
+      
       <div class="field">
         <label for="editCategoryName">Category Name</label>
         <input id="editCategoryName" type="text" placeholder="Enter category name">
@@ -1071,7 +544,7 @@
     <div class="modal-box">
       <button type="button" class="modal-close-btn" onclick="showCancelConfirmation()" title="Close">×</button>
       <div id="addCategoryTitle" class="modal-title">Create New Category</div>
-
+      
       <div class="field">
         <label for="categoryName">Category Name</label>
         <input id="categoryName" type="text" placeholder="Enter category name">
@@ -1130,7 +603,7 @@
   </div>
 
   <script>
-    (function () {
+    (function(){
       const pretty = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
       const params = new URLSearchParams(window.location.search);
       const key = (params.get('name') || '').trim().toLowerCase();
@@ -1140,13 +613,13 @@
       // Load categories from localStorage
       const getCategories = () => {
         let categories = [];
-        try {
-          categories = JSON.parse(localStorage.getItem('categories') || '[]');
-        } catch {
-          categories = [];
+        try { 
+          categories = JSON.parse(localStorage.getItem('categories') || '[]'); 
+        } catch { 
+          categories = []; 
         }
-
-
+        
+        
         return categories;
       };
 
@@ -1154,7 +627,7 @@
       let editingFormId = null;
       window.openSubEditModal = async (formId) => {
         try {
-          const res = await fetch(`/admin/super/api/forms_get.php?id=${encodeURIComponent(formId)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+          const res = await fetch(`./api/forms_get.php?id=${encodeURIComponent(formId)}`, { headers: { 'Accept':'application/json' }, cache: 'no-store' });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data || data.ok !== true || !data.form) { alert('Failed to load form'); return; }
           const form = data.form;
@@ -1164,15 +637,15 @@
           // Populate fields
           document.getElementById('editCategoryName').value = form.form_name || '';
           // Terms
-          const langs = form.languages || { english: '', hindi: '', marathi: '' };
+          const langs = form.languages || { english:'', hindi:'', marathi:'' };
           document.getElementById('editEnglishRules').value = langs.english || '';
           document.getElementById('editHindiRules').value = langs.hindi || '';
           document.getElementById('editMarathiRules').value = langs.marathi || '';
           // Dates
           const es = document.getElementById('editStartDate');
           const ee = document.getElementById('editEndDate');
-          if (es) es.value = (form.startDate || '').slice(0, 10);
-          if (ee) ee.value = (form.endDate || '').slice(0, 10);
+          if (es) es.value = (form.startDate || '').slice(0,10);
+          if (ee) ee.value = (form.endDate || '').slice(0,10);
           // Options
           const container = document.getElementById('editDropdownOptions');
           container.innerHTML = '';
@@ -1187,7 +660,7 @@
               const row = document.createElement('div');
               row.className = 'option-row';
               const removeButton = index >= 1 ? `<button type="button" class="remove-btn" onclick="removeEditOption(this)">×</button>` : '';
-              row.innerHTML = `<input type="text" class="option-input" value="${(option || '').replace(/"/g, '&quot;')}" placeholder="Enter option">${removeButton}`;
+              row.innerHTML = `<input type="text" class="option-input" value="${(option||'').replace(/"/g,'&quot;')}" placeholder="Enter option">${removeButton}`;
               container.appendChild(row);
             });
           }
@@ -1205,17 +678,8 @@
           const englishRules = document.getElementById('editEnglishRules').value.trim();
           const hindiRules = document.getElementById('editHindiRules').value.trim();
           const marathiRules = document.getElementById('editMarathiRules').value.trim();
-          // Normalize date inputs to YYYY-MM-DD before sending (handles DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY)
-          const norm = (v) => {
-            const s = (v || '').trim();
-            if (!s) return '';
-            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // already ISO
-            const m = s.match(/^(\d{2})[\/\.-](\d{2})[\/\.-](\d{4})$/);
-            if (m) { const [, d, mn, y] = m; return `${y}-${mn}-${d}`; }
-            return s;
-          };
-          const editStartDate = norm(document.getElementById('editStartDate')?.value || '');
-          const editEndDate = norm(document.getElementById('editEndDate')?.value || '');
+          const editStartDate = (document.getElementById('editStartDate')?.value || '').trim();
+          const editEndDate = (document.getElementById('editEndDate')?.value || '').trim();
           // Basic validation (at least name)
           if (!name) { alert('Name is required'); return; }
           try {
@@ -1226,8 +690,8 @@
             fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
             if (editStartDate) fd.append('startDate', editStartDate);
             if (editEndDate) fd.append('endDate', editEndDate);
-            const res = await fetch('/admin/super/api/form_update.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
-            const data = await res.json().catch(() => ({}));
+            const res = await fetch('./api/form_update.php', { method:'POST', headers:{ 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' }, body: fd });
+            const data = await res.json().catch(()=>({}));
             if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
             // Close and refresh
             editingFormId = null;
@@ -1268,7 +732,7 @@
           const fd = new FormData();
           fd.append('form_id', String(activeSubFormId));
           fd.append('form_name', name);
-          const res = await fetch('/admin/super/api/form_rename.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const res = await fetch('./api/form_rename.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data || data.ok !== true) {
             alert((data && data.error) ? data.error : 'Failed to rename');
@@ -1294,7 +758,7 @@
         try {
           const fd = new FormData();
           fd.append('form_id', String(activeSubFormId));
-          const res = await fetch('/admin/super/api/form_delete.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+          const res = await fetch('./api/form_delete.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data || data.ok !== true) {
             alert((data && data.error) ? data.error : 'Failed to delete');
@@ -1306,7 +770,7 @@
         } catch (_) { alert('Network error. Please try again.'); }
       };
       const saveCategories = (cats) => {
-        try { localStorage.setItem('categories', JSON.stringify(cats)); } catch { }
+        try { localStorage.setItem('categories', JSON.stringify(cats)); } catch {}
       };
 
       // Check user role
@@ -1361,11 +825,13 @@
         const englishRules = document.getElementById('englishRules').value.trim();
         const hindiRules = document.getElementById('hindiRules').value.trim();
         const marathiRules = document.getElementById('marathiRules').value.trim();
-
+        const startDate = document.getElementById('startDate').value.trim();
+        const endDate = document.getElementById('endDate').value.trim();
+        
         // Check dropdown options
         const optionInputs = document.querySelectorAll('.option-input');
         const hasOptions = Array.from(optionInputs).some(input => input.value.trim() !== '');
-
+        
         return !!(name || englishRules || hindiRules || marathiRules || hasOptions);
       };
 
@@ -1379,7 +845,7 @@
         // Check which modal is currently open and close it
         const addModal = document.getElementById('addCategoryModal');
         const editModal = document.getElementById('editCategoryModal');
-
+        
         if (addModal && !addModal.classList.contains('hidden')) {
           closeAddCategoryModal();
         } else if (editModal && !editModal.classList.contains('hidden')) {
@@ -1409,7 +875,7 @@
         category.options.forEach((option, index) => {
           const optionRow = document.createElement('div');
           optionRow.className = 'option-row';
-          const removeButton = index >= 1 ?
+          const removeButton = index >= 1 ? 
             `<button type="button" class="remove-btn" onclick="removeEditOption(this)">×</button>` : '';
           optionRow.innerHTML = `
             <input type="text" class="option-input" value="${option}" placeholder="Enter option">
@@ -1458,18 +924,18 @@
           const currentEnglishRules = document.getElementById('editEnglishRules').value.trim();
           const currentHindiRules = document.getElementById('editHindiRules').value.trim();
           const currentMarathiRules = document.getElementById('editMarathiRules').value.trim();
-
+          
           // Check if any field has changed from original
           const nameChanged = currentName !== category.name;
           const englishChanged = currentEnglishRules !== (category.rules.english || '');
           const hindiChanged = currentHindiRules !== (category.rules.hindi || '');
           const marathiChanged = currentMarathiRules !== (category.rules.marathi || '');
-
+          
           // Check dropdown options
           const optionInputs = document.querySelectorAll('#editDropdownOptions .option-input');
           const currentOptions = Array.from(optionInputs).map(input => input.value.trim());
           const optionsChanged = JSON.stringify(currentOptions) !== JSON.stringify(category.options || []);
-
+          
           return !!(nameChanged || englishChanged || hindiChanged || marathiChanged || optionsChanged);
         } catch (error) {
           console.error('Error in checkIfEditFormDataChanged:', error);
@@ -1496,10 +962,10 @@
         const optionCount = container.children.length;
         const optionRow = document.createElement('div');
         optionRow.className = 'option-row';
-
-        const removeButton = optionCount >= 1 ?
+        
+        const removeButton = optionCount >= 1 ? 
           `<button type="button" class="remove-btn" onclick="removeEditOption(this)">×</button>` : '';
-
+        
         optionRow.innerHTML = `
           <input type="text" class="option-input" placeholder="Enter option">
           ${removeButton}
@@ -1518,7 +984,7 @@
       const updateEditRemoveButtons = () => {
         const container = document.getElementById('editDropdownOptions');
         const optionRows = container.querySelectorAll('.option-row');
-
+        
         optionRows.forEach((row, index) => {
           const removeBtn = row.querySelector('.remove-btn');
           if (removeBtn) {
@@ -1549,19 +1015,19 @@
           const prevText = btn ? btn.textContent : '';
           try {
             if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-
+            
             // Handle dates - normalize date inputs to YYYY-MM-DD before sending
             const norm = (v) => {
               const s = (v || '').trim();
               if (!s) return '';
               if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // already ISO
               const m = s.match(/^(\d{2})[\/\.-](\d{2})[\/\.-](\d{4})$/);
-              if (m) { const [, d, mn, y] = m; return `${y}-${mn}-${d}`; }
+              if (m) { const [,d,mn,y] = m; return `${y}-${mn}-${d}`; }
               return s;
             };
             const editStartDate = norm(document.getElementById('editStartDate')?.value || '');
             const editEndDate = norm(document.getElementById('editEndDate')?.value || '');
-
+            
             const fd = new FormData();
             fd.append('form_id', String(editingFormId));
             fd.append('form_name', name);
@@ -1569,8 +1035,8 @@
             fd.append('languages', JSON.stringify({ english: englishRules, hindi: hindiRules, marathi: marathiRules }));
             if (editStartDate) fd.append('startDate', editStartDate);
             if (editEndDate) fd.append('endDate', editEndDate);
-            const res = await fetch('/admin/super/api/form_update.php', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
-            const data = await res.json().catch(() => ({}));
+            const res = await fetch('./api/form_update.php', { method:'POST', headers: { 'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest' }, body: fd });
+            const data = await res.json().catch(()=>({}));
             if (!res.ok || !data || data.ok !== true) { alert((data && data.error) ? data.error : 'Failed to update'); return; }
             editingFormId = null;
             closeEditCategoryModal();
@@ -1608,7 +1074,7 @@
         const categories = getCategories();
         const filteredCategories = categories.filter(c => c.id !== deletingCategoryId);
         saveCategories(filteredCategories);
-
+        
         renderCategories();
         renderFilters([]); // Pass empty array since we're not dealing with forms here
         renderTable();
@@ -1631,11 +1097,11 @@
         const optionCount = container.children.length;
         const optionRow = document.createElement('div');
         optionRow.className = 'option-row';
-
+        
         // Show remove button only if this is not the first option
-        const removeButton = optionCount >= 1 ?
+        const removeButton = optionCount >= 1 ? 
           `<button type="button" class="remove-btn" onclick="removeOption(this)">×</button>` : '';
-
+        
         optionRow.innerHTML = `
           <input type="text" class="option-input" placeholder="Enter option">
           ${removeButton}
@@ -1655,7 +1121,7 @@
       const updateRemoveButtons = () => {
         const container = document.getElementById('dropdownOptions');
         const optionRows = container.querySelectorAll('.option-row');
-
+        
         optionRows.forEach((row, index) => {
           const removeBtn = row.querySelector('.remove-btn');
           if (removeBtn) {
@@ -1695,8 +1161,8 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><input type="checkbox" class="row-checkbox" /></td>
-            <td>${(f.form_name || '').replace(/</g, '&lt;')}</td>
-            <td>${getCategoryParam().replace(/</g, '&lt;')}</td>
+            <td>${(f.form_name || '').replace(/</g,'&lt;')}</td>
+            <td>${getCategoryParam().replace(/</g,'&lt;')}</td>
             <td>${new Date().toLocaleString()}</td>
             <td class="action-icons">
               <button type="button" class="action-btn edit" disabled>Edit</button>
@@ -1718,37 +1184,27 @@
           card.className = 'cat-card';
           const title = (f.form_name || '').trim() || 'Untitled';
           const token = (f.form_link || '').trim();
-          const pathUrl = token ? `/form/?token=${encodeURIComponent(token)}` : '';
-          const origin = window.location.origin || (location.protocol + '//' + location.host);
-          const fullUrl = pathUrl ? (pathUrl.startsWith('http') ? pathUrl : `${origin}${pathUrl}`) : '';
+          const fullUrl = token ? `${location.origin}/../../form/?token=${encodeURIComponent(token)}` : '';
           const thisFormId = Number(f.id || 0);
           const countVal = (countsByFormId && thisFormId) ? Number(countsByFormId[thisFormId] || 0) : 0;
           const fmt = (s) => {
-            const v = (s || '').slice(0, 10);
+            const v = (s || '').slice(0,10);
             if (!v) return '';
             const parts = v.split('-');
-            if (parts.length === 3) { const [y, m, d] = parts; return `${d}-${m}-${y}`; }
+            if (parts.length === 3) { const [y,m,d] = parts; return `${d}-${m}-${y}`; }
             return v;
           };
           const sd = fmt(f.startDate);
           const ed = fmt(f.endDate);
           card.innerHTML = `
-            <div class="cat-actions" style="position:absolute; top:8px; right:8px; display:flex; gap:6px;">
-              <button class="icon-btn-sm" title="Edit" aria-label="Edit" onclick="window.openSubEditModal(${thisFormId})">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-              </button>
-              <button class="icon-btn-sm" title="Delete" aria-label="Delete" onclick="window.openSubDeleteModal(${thisFormId}, '${title.replace(/'/g, "&#39;")}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"></polyline><path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path><path d="m10,11 0,6"></path><path d="m14,11 0,6"></path><path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path></svg>
-              </button>
-            </div>
             <div class="cat-badge">SDC-${String(thisFormId || 0).padStart(5, '0')}</div>
             <div class="cat-header">
-              <div class="cat-name">${title.replace(/</g, '&lt;')}<span style="display:block;font-size:12px;color:#64748b;margin-top:2px;">${(sd && ed) ? `${sd} TO ${ed}` : (sd || ed)}</span></div>
+              <div class="cat-name">${(title.replace(/</g,'&lt;'))}<span style="display:block;font-size:12px;color:#64748b;margin-top:2px;">${(sd&&ed)? `${sd} TO ${ed}` : (sd||ed)}</span></div>
               <div class="cat-count">${countVal}</div>
             </div>
             <div class="cat-link-container">
-              <a class="cat-link" href="${fullUrl || '#'}" title="Form link" ${fullUrl ? 'target="_blank" rel="noopener"' : ''}>${fullUrl ? fullUrl.replace(/</g, '&lt;') : 'https://example.com/link'}</a>
-              <button class="copy-btn" type="button" title="Copy link" onclick="navigator.clipboard.writeText('${fullUrl.replace(/'/g, "&#39;")}').catch(()=>{})">
+              <a class="cat-link" href="${fullUrl || '#'}" title="Form link" ${fullUrl ? 'target="_blank" rel="noopener"' : ''}>${fullUrl ? fullUrl.replace(/</g,'&lt;') : 'https://example.com/link'}</a>
+              <button class="copy-btn" type="button" title="Copy link" onclick="navigator.clipboard.writeText('${fullUrl.replace(/'/g,"&#39;")}').catch(()=>{})">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2M16 8h2a2 2 0 012 2v8a2 2 0 01-2 2H10a2 2 0 01-2-2v-2" /></svg>
               </button>
             </div>
@@ -1769,7 +1225,7 @@
         const name = getCategoryParam();
         if (!name) return;
         try {
-          const res = await fetch(`/admin/super/api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+          const res = await fetch(`./api/forms_list.php?category=${encodeURIComponent(name)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
           const data = await res.json().catch(() => ({}));
           if (res.ok && data && data.ok && Array.isArray(data.forms)) {
             // Also fetch submissions for this main category to compute accurate counts per form
@@ -1811,8 +1267,6 @@
         const englishRules = document.getElementById('englishRules').value.trim();
         const hindiRules = document.getElementById('hindiRules').value.trim();
         const marathiRules = document.getElementById('marathiRules').value.trim();
-        const startDate = document.getElementById('startDate').value.trim();
-        const endDate = document.getElementById('endDate').value.trim();
 
         // Basic validation
         let ok = true;
@@ -1841,7 +1295,7 @@
         const prev = btn ? btn.textContent : '';
         if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
         try {
-          const res = await fetch('/admin/super/api/forms_create.php', {
+          const res = await fetch('./api/forms_create.php', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: fd,
@@ -1873,7 +1327,7 @@
         if (!row) return;
         row.innerHTML = '';
         const chips = [
-          { label: 'All', href: './index.html' },
+          { label: 'All', href: 'index.html' },
         ];
         const active = getCategoryParam();
         chips.forEach(ch => {
@@ -1893,7 +1347,7 @@
 
       renderStaticFilters();
 
-
+      
 
       // Error handling functions
       const clearErrors = () => {
@@ -1901,7 +1355,7 @@
         document.querySelectorAll('.error-message').forEach(error => {
           error.classList.remove('show');
         });
-
+        
         // Remove error class from fields
         document.querySelectorAll('.field').forEach(field => {
           field.classList.remove('error');
@@ -1914,123 +1368,54 @@
         if (errorElement) {
           errorElement.classList.add('show');
         }
-
+        
         // Add error class to field
-        const fieldElement = document.getElementById(fieldId) ||
-          document.getElementById(fieldId).parentElement;
+        const fieldElement = document.getElementById(fieldId) || 
+                           document.getElementById(fieldId).parentElement;
         if (fieldElement) {
           fieldElement.classList.add('error');
         }
       };
 
+   
 
-
-
+    
       let activeFilters = new Set(['All']); // Set "All" as active by default
-      let activeDrawFilters = new Set(['All']); // Set "All" as active by default for Draw Names
-      let allForms = []; // Store fetched forms globally for dependent filtering
       let searchQuery = '';
 
       // Render filters with subcategory names
-      // Render filters with subcategory names
       const renderFilters = (forms = []) => {
-        allForms = forms; // Store globally
         const filterRow = document.getElementById('filterRow');
-        const drawFilterRow = document.getElementById('drawFilterRow');
         if (!filterRow) return;
-
+        
         filterRow.innerHTML = '';
-        if (drawFilterRow) drawFilterRow.innerHTML = '';
 
-        // --- Sub-Category Filters ---
+        // Add "All" filter
         const allFilter = document.createElement('button');
         allFilter.className = 'filter-chip';
-        allFilter.textContent = 'All Agreements';
+        allFilter.textContent = 'All';
         allFilter.onclick = () => toggleFilter('All');
         filterRow.appendChild(allFilter);
 
+        // Add subcategory filters from forms data
         if (forms && forms.length > 0) {
           forms.forEach(form => {
             if (form.form_name) {
               const filter = document.createElement('button');
               filter.className = 'filter-chip';
-              filter.textContent = form.form_name;
+              filter.textContent = form.form_name; // This will show "Gold 1k", "Gold 2k", etc.
               filter.onclick = () => toggleFilter(form.form_name);
               filterRow.appendChild(filter);
             }
           });
         }
 
-        // Initial render of draw filters
-        renderDrawFilters();
         updateFilterUI();
       };
 
-      // Render Draw Name filters based on active Sub-Category filters
-      const renderDrawFilters = () => {
-        const drawFilterRow = document.getElementById('drawFilterRow');
-        if (!drawFilterRow) return;
-
-        drawFilterRow.innerHTML = '';
-
-        // Determine which forms to consider based on activeSubFilters
-        let relevantForms = [];
-        if (activeFilters.has('All')) {
-          relevantForms = allForms;
-        } else {
-          relevantForms = allForms.filter(f => activeFilters.has(f.form_name));
-        }
-
-        // Collect unique draw names from relevant forms
-        const uniqueDrawNames = new Set();
-        if (relevantForms && relevantForms.length > 0) {
-          relevantForms.forEach(form => {
-            if (Array.isArray(form.draw_names)) {
-              form.draw_names.forEach(dn => {
-                if (dn && dn.trim()) uniqueDrawNames.add(dn.trim());
-              });
-            }
-          });
-        }
-
-        // "All Draw Names" chip
-        const allDrawFilter = document.createElement('button');
-        allDrawFilter.className = 'filter-chip';
-        allDrawFilter.textContent = 'All Draw Names';
-        allDrawFilter.onclick = () => toggleDrawFilter('All');
-        drawFilterRow.appendChild(allDrawFilter);
-
-        // Specific Draw Name chips
-        Array.from(uniqueDrawNames).sort().forEach(drawName => {
-          const filter = document.createElement('button');
-          filter.className = 'filter-chip';
-          filter.textContent = drawName;
-          filter.onclick = () => toggleDrawFilter(drawName);
-          drawFilterRow.appendChild(filter);
-        });
-
-        // Reset draw filter to All if the selected one is not in the new list?
-        const newAvailableDraws = new Set(uniqueDrawNames);
-        const newActiveDraws = new Set();
-
-        if (activeDrawFilters.has('All')) {
-          newActiveDraws.add('All');
-        } else {
-          activeDrawFilters.forEach(filter => {
-            if (newAvailableDraws.has(filter)) {
-              newActiveDraws.add(filter);
-            }
-          });
-        }
-
-        if (newActiveDraws.size === 0) {
-          newActiveDraws.add('All');
-        }
-        activeDrawFilters = newActiveDraws;
-      };
-
-      // Toggle filter for Sub-Category
+      // Toggle filter
       const toggleFilter = (categoryName) => {
+        // Clear all filters first (except "All" if clicking on it)
         if (categoryName === 'All') {
           activeFilters.clear();
           activeFilters.add('All');
@@ -2038,43 +1423,15 @@
           activeFilters.clear();
           activeFilters.add(categoryName);
         }
-
-        renderDrawFilters(); // Update draw filters
         updateFilterUI();
-        renderTable();
+        renderTable(); // This is now async but will work fine
       };
 
-      // Toggle filter for Draw Name
-      const toggleDrawFilter = (drawName) => {
-        if (drawName === 'All') {
-          activeDrawFilters.clear();
-          activeDrawFilters.add('All');
-        } else {
-          activeDrawFilters.clear();
-          activeDrawFilters.add(drawName);
-        }
-        updateFilterUI();
-        renderTable();
-      };
-
-      // Update filter UI (both rows)
+      // Update filter UI
       const updateFilterUI = () => {
-        // Sub-category chips
-        const catChips = document.querySelectorAll('#filterRow .filter-chip');
-        catChips.forEach(chip => {
-          const txt = chip.textContent === 'All Agreements' ? 'All' : chip.textContent;
-          if (activeFilters.has(txt)) {
-            chip.classList.add('active');
-          } else {
-            chip.classList.remove('active');
-          }
-        });
-
-        // Draw name chips
-        const drawChips = document.querySelectorAll('#drawFilterRow .filter-chip');
-        drawChips.forEach(chip => {
-          const txt = chip.textContent === 'All Draw Names' ? 'All' : chip.textContent;
-          if (activeDrawFilters.has(txt)) {
+        const chips = document.querySelectorAll('.filter-chip');
+        chips.forEach(chip => {
+          if (activeFilters.has(chip.textContent)) {
             chip.classList.add('active');
           } else {
             chip.classList.remove('active');
@@ -2086,14 +1443,14 @@
       const renderTable = async () => {
         const tableBody = document.getElementById('tableBody');
         const noResults = document.getElementById('noResults');
-
+        
         console.log('renderTable called'); // Debug log
-
+        
         try {
           // Get current category from URL
           const currentCategory = getCategoryParam();
           console.log('Current category:', currentCategory); // Debug log
-
+          
           // Always filter on the server by main category from the URL; pass both name and numeric ID (if available)
           const cid = getCategoryIdParam();
           const qs = new URLSearchParams();
@@ -2101,7 +1458,7 @@
           if (cid) qs.set('category_id', String(cid));
           const apiUrl = `./api/get_submissions.php${qs.toString() ? `?${qs.toString()}` : ''}`;
           console.log('API URL:', apiUrl); // Debug log
-
+          
           const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
@@ -2109,9 +1466,9 @@
               'Cache-Control': 'no-cache'
             }
           });
-
+          
           console.log('API response status:', response.status); // Debug log
-
+          
           // Handle network/server errors gracefully
           if (!response.ok) {
             console.log('Response not OK:', response.status); // Debug log
@@ -2123,10 +1480,10 @@
               return;
             }
           }
-
+          
           const data = await response.json().catch(() => null);
           console.log('API data received:', data); // Debug log
-
+          
           // Handle JSON parsing errors or invalid responses
           if (!data) {
             console.log('No data received'); // Debug log
@@ -2135,7 +1492,7 @@
             noResults.textContent = 'No user submissions available at the moment.';
             return;
           }
-
+          
           // Handle API errors gracefully
           if (!data.success) {
             console.log('API returned success=false'); // Debug log
@@ -2144,10 +1501,10 @@
             noResults.textContent = 'No user submissions available at the moment.';
             return;
           }
-
+          
           let submissions = data.submissions || [];
           console.log('Submissions array:', submissions); // Debug log
-
+          
           // Handle null or empty submissions
           if (!submissions || submissions.length === 0) {
             console.log('No submissions found'); // Debug log
@@ -2156,46 +1513,37 @@
             noResults.textContent = 'No user submissions found. When users submit forms, they will appear here.';
             return;
           }
-
+          
           // Apply search filter
           if (searchQuery) {
             submissions = submissions.filter(submission => {
               const fullName = `${submission.first_name || ''} ${submission.last_name || ''}`.toLowerCase();
               const drawName = (submission.draw_name || '').toLowerCase();
               const categoryName = (submission.category_name || '').toLowerCase();
-              return fullName.includes(searchQuery.toLowerCase()) ||
-                drawName.includes(searchQuery.toLowerCase()) ||
-                categoryName.includes(searchQuery.toLowerCase());
+              return fullName.includes(searchQuery.toLowerCase()) || 
+                     drawName.includes(searchQuery.toLowerCase()) ||
+                     categoryName.includes(searchQuery.toLowerCase());
             });
           }
-
+          
           // Apply category filter - now works with form names from forms_aggri table
           if (!activeFilters.has('All')) {
             submissions = submissions.filter(submission => {
               // Check if the submission's category_name matches any active filter
               const categoryName = submission.category_name || '';
               const drawName = submission.draw_name || '';
-
+              
               // Check if any active filter matches the category_name or draw_name
-              return Array.from(activeFilters).some(filter =>
-                categoryName.toLowerCase().includes(filter.toLowerCase())
-              );
-            });
-          }
-
-          // Apply Draw Name filter
-          if (!activeDrawFilters.has('All')) {
-            submissions = submissions.filter(submission => {
-              const drawName = submission.draw_name || '';
-              return Array.from(activeDrawFilters).some(filter =>
+              return Array.from(activeFilters).some(filter => 
+                categoryName.toLowerCase().includes(filter.toLowerCase()) ||
                 drawName.toLowerCase().includes(filter.toLowerCase())
               );
             });
           }
-
+          
           // Clear table
           tableBody.innerHTML = '';
-
+          
           if (submissions.length === 0) {
             noResults.style.display = 'block';
             if (searchQuery) {
@@ -2207,10 +1555,10 @@
             }
             return;
           }
-
+          
           console.log('Rendering', submissions.length, 'submissions'); // Debug log
           noResults.style.display = 'none';
-
+          
           // Add rows with real user data
           submissions.forEach(submission => {
             const row = document.createElement('tr');
@@ -2218,7 +1566,7 @@
             const mobile = (submission.mobileno || '').toString();
             const category = submission.category_name || 'N/A'; // Use category_name from JOIN
             const dateTime = submission.date_time ? new Date(submission.date_time).toLocaleString() : 'N/A';
-
+            
             row.innerHTML = `
               <td><input type="checkbox" class="row-checkbox" data-user-id="${submission.id || ''}" onchange="handleCheckboxChange()"></td>
               <td>${fullName || 'N/A'}</td>
@@ -2233,21 +1581,12 @@
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   </button>
-                  <button class="icon-btn-sm" onclick="deleteUser(${submission.id || 0})" title="Delete">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3,6 5,6 21,6"></polyline>
-                      <path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path>
-                      <path d="m10,11 0,6"></path>
-                      <path d="m14,11 0,6"></path>
-                      <path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path>
-                    </svg>
-                  </button>
                 </div>
               </td>
             `;
             tableBody.appendChild(row);
           });
-
+          
         } catch (error) {
           // Handle all other errors gracefully - don't show technical error messages
           console.error('Error fetching submissions:', error);
@@ -2269,7 +1608,7 @@
       // User actions - Open PDF in new tab instead of forcing download
       window.viewUser = (userId) => {
         console.log('Opening PDF for user:', userId);
-
+        
         // Open in new tab instead of forcing download
         const url = `./api/download_pdf.php?user_id=${userId}`;
         window.open(url, '_blank');
@@ -2279,14 +1618,14 @@
         try {
           userId = Number(userId || 0);
           if (!userId) return;
-
+          
           // Store the user ID for the confirmation
           window.deletingUserId = userId;
-
+          
           // Show the custom modal instead of browser confirm
           const modal = document.getElementById('deleteSubmissionModal');
           if (modal) modal.classList.remove('hidden');
-
+          
         } catch (_) {
           alert('Error occurred. Please try again.');
         }
@@ -2320,7 +1659,7 @@
         try {
           const userId = window.deletingUserId;
           if (!userId) return;
-
+          
           const fd = new FormData();
           fd.append('user_id', String(userId));
           const res = await fetch('./api/user_delete.php', {
@@ -2333,11 +1672,11 @@
             alert((data && data.error) ? data.error : 'Failed to delete');
             return;
           }
-
+          
           // Close modal and refresh table
           closeDeleteSubmissionModal();
           await renderTable();
-
+          
         } catch (_) {
           alert('Network error. Please try again.');
         }
@@ -2347,15 +1686,15 @@
       const renderCategories = () => {
         const grid = document.getElementById('su-grid');
         const categories = getCategories();
-
+        
         grid.innerHTML = '';
-
+        
         // Add category cards
         categories.forEach(category => {
           const card = document.createElement('div');
           card.className = 'cat-card';
-
-          // Only show edit and delete buttons for admin users
+          
+          // Only show edit button for sub admin users
           const actionsHtml = isAdmin ? `
             <div class="cat-actions">
               <button type="button" class="icon-btn-sm" onclick="openEditCategoryModal('${category.id}')" title="Edit">
@@ -2364,18 +1703,9 @@
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
                 </svg>
               </button>
-              <button type="button" class="icon-btn-sm" onclick="openDeleteModal('${category.id}')" title="Delete">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3,6 5,6 21,6"></polyline>
-                  <path d="m5,6 1,14c0,1.1 0.9,2 2,2h8c1.1,0 2,0.9 2,2l1-14"></path>
-                  <path d="m10,11 0,6"></path>
-                  <path d="m14,11 0,6"></path>
-                  <path d="m8,6 0,-2c0,-1.1 0.9,-2 2,-2h4c1.1,0 2,0.9 2,2v2"></path>
-                </svg>
-              </button>
             </div>
           ` : '';
-
+          
           card.innerHTML = `
             ${actionsHtml}
             <div class="cat-header">
@@ -2457,7 +1787,7 @@
         if (errorElement) {
           errorElement.classList.remove('show');
         }
-
+        
         // Remove error class from field
         const fieldElement = document.getElementById(fieldId);
         if (fieldElement) {
@@ -2490,14 +1820,14 @@
         const container = button.closest('.cat-link-container');
         const link = container.querySelector('.cat-link');
         const text = link.textContent;
-
+        
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(() => {
             // Show success feedback
             const originalHTML = button.innerHTML;
             button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"></polyline></svg>';
             button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-
+            
             setTimeout(() => {
               button.innerHTML = originalHTML;
               button.style.background = '';
@@ -2517,7 +1847,7 @@
             const originalHTML = button.innerHTML;
             button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"></polyline></svg>';
             button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-
+            
             setTimeout(() => {
               button.innerHTML = originalHTML;
               button.style.background = '';
@@ -2540,7 +1870,7 @@
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
         const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-
+        
         if (selectAllCheckbox) {
           if (rowCheckboxes.length === 0) {
             selectAllCheckbox.checked = false;
@@ -2567,7 +1897,7 @@
       const updateBottomContainer = () => {
         const checkboxes = document.querySelectorAll('.row-checkbox:checked');
         const container = document.getElementById('bottomActionContainer');
-
+        
         if (checkboxes.length > 0) {
           container.classList.add('show');
         } else {
@@ -2594,14 +1924,14 @@
         const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
           .map(cb => Number(cb.getAttribute('data-user-id') || '0'))
           .filter(n => Number.isFinite(n) && n > 0);
-        if (!ids.length) {
-          alert('No submissions selected');
+        if (ids.length === 0) {
+          alert('Please select at least one submission.');
           return;
         }
         const csv = ids.join(',');
         const url = `./api/download_pdf.php?user_id=${encodeURIComponent(csv)}`;
         window.open(url, '_blank');
-
+        
         // Clear all checkboxes after download is initiated
         setTimeout(() => {
           document.querySelectorAll('.row-checkbox:checked').forEach(cb => cb.checked = false);
@@ -2611,6 +1941,7 @@
         }, 500);
       };
 
+      // Bulk delete UX handlers
       window.openBulkDeleteModal = () => {
         const ids = Array.from(document.querySelectorAll('.row-checkbox:checked'))
           .map(cb => Number(cb.getAttribute('data-user-id') || '0'))
@@ -2669,7 +2000,7 @@
       renderFilters([]); // Will be updated when loadForms() completes
       renderTable();
       setupSearch();
-
+      
       // Setup input listeners for error clearing
       setupInputListeners();
     })();
@@ -2679,8 +2010,7 @@
   <div class="bottom-action-container" id="bottomActionContainer" style="justify-content: space-between;">
     <div style="display:flex; align-items:center; gap:12px;">
       <button class="download-btn" id="downloadBtn" onclick="downloadSelected()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7,10 12,15 17,10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -2689,37 +2019,10 @@
       </button>
     </div>
     <div class="selected-count" id="selectedCount">0 items selected</div>
-    <div>
-      <button class="bulk-delete-btn" id="bulkDeleteBtn" onclick="openBulkDeleteModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <polyline points="3,6 5,6 21,6"></polyline>
-          <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
-          <line x1="10" y1="11" x2="10" y2="17"></line>
-          <line x1="14" y1="11" x2="14" y2="17"></line>
-        </svg>
-        Delete Selected
-      </button>
-    </div>
   </div>
 
-  <!-- Bulk Delete Confirmation Modal -->
-  <div id="bulkDeleteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bulkDeleteTitle">
-    <div class="modal-box" style="max-width: 480px;">
-      <div class="modal-header">
-        <div id="bulkDeleteTitle" class="modal-title">Delete Selected Submissions</div>
-      </div>
-      <div class="modal-content">
-        <p class="modal-text">Are you sure you want to delete all selected submissions? This action cannot be undone.
-        </p>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn" onclick="closeBulkDeleteModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" style="background:#dc2626;"
-          onclick="confirmBulkDelete()">Delete</button>
-      </div>
-    </div>
-  </div>
+  <script>
+    // Fallback script removed - bulk delete functionality disabled for sub admin
+  </script>
 </body>
-
 </html>

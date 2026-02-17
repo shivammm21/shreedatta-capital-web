@@ -1,5 +1,5 @@
 <?php
-// form/api/register.php
+// asset/forms/api/register.php
 // Accepts public form submission and stores into:
 // - all_submissions: (forms_aggri_id, first_name, last_name, token_no, draw_name)
 // - user_docs: (user_id -> all_submissions.id, live_photo, front_addhar, back_addhar)
@@ -51,7 +51,6 @@ try {
     $first = trim((string)($_POST['firstName'] ?? ''));
     $last = trim((string)($_POST['lastName'] ?? ''));
     $draw = trim((string)($_POST['draw'] ?? ''));
-    $mobile = preg_replace('/\D+/', '', (string)($_POST['mobileNo'] ?? ''));
     $lang = trim((string)($_POST['lang'] ?? ''));
     $tokens = $_POST['tokens'] ?? [];
     if (!is_array($tokens)) { $tokens = []; }
@@ -61,12 +60,6 @@ try {
     if ($first === '' || $last === '' || $draw === '' || $tokenNo === '') {
         http_response_code(400);
         echo json_encode(['ok' => false, 'error' => 'Missing required fields']);
-        exit;
-    }
-    // Basic mobile validation (expects 10 digits)
-    if ($mobile === '' || !preg_match('/^\d{10}$/', $mobile)) {
-        http_response_code(400);
-        echo json_encode(['ok' => false, 'error' => 'Invalid mobile number']);
         exit;
     }
 
@@ -88,13 +81,21 @@ try {
         $back = file_get_contents($_FILES['aadBack']['tmp_name']);
     }
 
-    // DB
-    require_once __DIR__ . '/../../asset/db/config.php'; // provides $pdo
+    // DB - Updated path for asset/forms/api location
+    require_once __DIR__ . '/../../db/config.php'; // provides $pdo
+
+    // Log the attempt for debugging intermittent issues
+    if (isset($_GET['debug']) || isset($_POST['debug'])) {
+        error_log("Registration attempt - Token: $token, Forms ID: $formsAggriId, Time: " . date('Y-m-d H:i:s'));
+    }
 
     // Validate that forms_aggri_id exists
     $stmt = $pdo->prepare('SELECT id FROM forms_aggri WHERE id = ? LIMIT 1');
     $stmt->execute([$formsAggriId]);
     if (!$stmt->fetch()) {
+        if (isset($_GET['debug']) || isset($_POST['debug'])) {
+            error_log("Form validation failed - ID $formsAggriId not found in forms_aggri table");
+        }
         http_response_code(400);
         echo json_encode(['ok' => false, 'error' => 'Invalid form ID from token']);
         exit;
@@ -118,24 +119,18 @@ try {
         // Insert into `all-submissions` (note: hyphenated table name) including `language` column
         // Prefer inserting `form_data_id` as well; fall back if column is missing
         try {
-            // Preferred: includes form_data_id, mobile number and language
-            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `form_data_id`, `first_name`, `last_name`, `mobileno`, `language`, `token_no`, `draw_name`, `date_time`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())');
-            $ins->execute([$formsAggriId, $formDataId, $first, $last, $mobile, $lang, $tokenNo, $draw]);
-        } catch (Throwable $e1) {
+            // First try with both form_data_id and language columns
+            $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `form_data_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $ins->execute([$formsAggriId, $formDataId, $first, $last, $lang, $tokenNo, $draw]);
+        } catch (Throwable $eInsertWithCat) {
             try {
-                // Without form_data_id, but with mobile + language
-                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `mobileno`, `language`, `token_no`, `draw_name`, `date_time`) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
-                $ins->execute([$formsAggriId, $first, $last, $mobile, $lang, $tokenNo, $draw]);
-            } catch (Throwable $e2) {
-                try {
-                    // Without language but with mobile
-                    $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `mobileno`, `token_no`, `draw_name`, `date_time`) VALUES (?, ?, ?, ?, ?, ?, NOW())');
-                    $ins->execute([$formsAggriId, $first, $last, $mobile, $tokenNo, $draw]);
-                } catch (Throwable $e3) {
-                    // Final fallback: legacy schema without mobile or language or form_data_id
-                    $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `token_no`, `draw_name`, `date_time`) VALUES (?, ?, ?, ?, ?, NOW())');
-                    $ins->execute([$formsAggriId, $first, $last, $tokenNo, $draw]);
-                }
+                // Try without form_data_id but with language
+                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `language`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?, ?)');
+                $ins->execute([$formsAggriId, $first, $last, $lang, $tokenNo, $draw]);
+            } catch (Throwable $eInsertWithLang) {
+                // Final fallback: legacy schema without form_data_id or language
+                $ins = $pdo->prepare('INSERT INTO `all-submissions` (`forms_aggri_id`, `first_name`, `last_name`, `token_no`, `draw_name`) VALUES (?, ?, ?, ?, ?)');
+                $ins->execute([$formsAggriId, $first, $last, $tokenNo, $draw]);
             }
         }
         $userId = (int)$pdo->lastInsertId();
@@ -159,7 +154,7 @@ try {
         }
 
         $pdo->commit();
-        echo json_encode(['ok' => true, 'userID' => $userId, 'formID' => $formsAggriId, 'mobile' => $mobile, 'message' => 'Saved']);
+        echo json_encode(['ok' => true, 'userID' => $userId, 'message' => 'Saved']);
     } catch (Throwable $dbE) {
         $pdo->rollBack();
         http_response_code(500);
@@ -173,6 +168,11 @@ try {
     exit;
 } catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Server error']);
+    $detail = '';
+    if (isset($_GET['debug']) || isset($_POST['debug'])) { 
+        $detail = $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine(); 
+    }
+    echo json_encode(['ok' => false, 'error' => 'Server error', 'detail' => $detail]);
     exit;
 }
+?>

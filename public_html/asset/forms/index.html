@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gold draw registration page</title>
-  <link rel="stylesheet" href=".asset/css/style.css" />
+  <link rel="stylesheet" href="../css/style.css" />
   <style>
     /* Page-level overrides to allow scrolling (global CSS centers body with grid+100% height) */
     html, body.form-page { height: auto; min-height: 100%; overflow-y: auto; }
@@ -16,7 +16,7 @@
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
     label { display:block; font-size: 14px; color: #374151; margin-bottom: 6px; }
-    input[type="text"], input[type="tel"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    input[type="text"], select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
     input[type="file"] { width: 100%; box-sizing: border-box; }
     .row { display:flex; align-items:center; gap: 12px; }
     .hint { font-size: 12px; color: #6b7280; }
@@ -155,7 +155,7 @@
 <body class="form-page">
   <div class="container">
     <div class="form-header">
-      <div class="logo"><img src="../asset/images/Logo.png" alt="Shree Datta Capital Logo" /></div>
+      <div class="logo"><img src="../images/Logo.png" alt="Shree Datta Capital Logo" /></div>
       <div class="content">
         <h1>Shree Datta Capital</h1>
         <h2>Gold Draw Agreement</h2>
@@ -173,10 +173,6 @@
             <input id="lastName" name="lastName" type="text" required />
           </div>
           <div>
-            <label for="mobileNo">Mobile number</label>
-            <input id="mobileNo" name="mobileNo" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10 digit mobile number" required />
-          </div>
-          <div>
             <label for="token-0">Token number(s)</label>
             <div class="tokens" id="tokens">
               <div class="token-row">
@@ -191,6 +187,15 @@
           <div>
             <label for="draw">Draw name</label>
             <select id="draw" name="draw" required>
+              <option value="">Select a draw</option>
+              <option value="Diwali Special Draw 2024">Diwali Special Draw 2024</option>
+              <option value="New Year Gold Draw">New Year Gold Draw</option>
+              <option value="Festival Bonanza Draw">Festival Bonanza Draw</option>
+              <option value="Monthly Premium Draw">Monthly Premium Draw</option>
+              <option value="Anniversary Special Draw">Anniversary Special Draw</option>
+              <option value="Monsoon Lucky Draw">Monsoon Lucky Draw</option>
+              <option value="Summer Gold Rush">Summer Gold Rush</option>
+              <option value="Winter Wonder Draw">Winter Wonder Draw</option>
             </select>
           </div>
           
@@ -272,46 +277,13 @@
         <div id="successMeta" style="margin-top:6px; color:#6b7280; font-size:13px;"></div>
       </div>
       <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
-        <a id="downloadPdfBtn" href="#" class="btn hidden" target="_blank" rel="noopener" role="button">Download Agreement</a>
+        <a id="downloadPdfBtn" href="#" class="btn hidden" target="_blank" rel="noopener" role="button">Download PDF</a>
         <button id="successClose" class="btn">Close</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Helper to format Form ID as SDC-000xx
-    function formatFormId(n){
-      if(!n && n !== 0) return '';
-      const num = parseInt(n, 10);
-      if (!Number.isFinite(num) || num <= 0) return '';
-      return `SDC-${String(num).padStart(5,'0')}`;
-    }
-
-    // Store current form (configuration) ID decoded from token
-    let currentFormId = null;
-    // ---- Token decode (matches server algorithm) ----
-    function decodeIdFromToken(token) {
-      if (!token || token.length !== 10) return 0;
-      const lenChar = token.charAt(0);
-      if (lenChar < '0' || lenChar > '9') return 0;
-      const L = parseInt(lenChar, 10);
-      if (!L || L < 1 || L > 9) return 0;
-      const id62 = token.slice(10 - L);
-      const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-      const map = {};
-      for (let i = 0; i < alphabet.length; i++) map[alphabet[i]] = i;
-      let id = 0;
-      for (let i = 0; i < id62.length; i++) {
-        const ch = id62[i];
-        if (!(ch in map)) return 0;
-        id = id * 62 + map[ch];
-      }
-      return id >>> 0; // ensure positive int
-    }
-
-    // Keep remote languages to override static texts when available
-    let remoteLanguages = null;
-
     const texts = {
       en: `<strong>Terms and Conditions:</strong><br><br>
 1) To become a member of Shree Datta Capital's draw, it is mandatory to pay Rs. 2000/- membership fee and book your number.<br>
@@ -381,26 +353,10 @@
     const submitBtn = document.getElementById('submitBtn');
     function setAgreement() {
       const lang = langSel.value;
-      // Prefer remote config
-      let base = '';
-      if (remoteLanguages) {
-        if (lang === 'en') base = remoteLanguages.english || '';
-        else if (lang === 'hi') base = remoteLanguages.hindi || '';
-        else if (lang === 'mr') base = remoteLanguages.marathi || '';
-      }
-      
-      // Format terms to preserve point-wise structure
-      function formatTerms(text) {
-        if (!text) return '';
-        // Convert newlines to <br> tags for HTML display
-        return text.replace(/\n/g, '<br>');
-      }
-      
-      if (!base) base = texts[lang] || texts.en;
+      const base = texts[lang] || texts.en;
       const name = getFullName();
       const nameLocalized = name;
-      const formattedBase = formatTerms(base.replaceAll('__NAME__', nameLocalized || '__NAME__'));
-      agreementText.innerHTML = formattedBase;
+      agreementText.innerHTML = base.replaceAll('__NAME__', nameLocalized || '__NAME__');
     }
     setAgreement();
     langSel.addEventListener('change', setAgreement);
@@ -408,24 +364,10 @@
     document.getElementById('firstName')?.addEventListener('input', setAgreement);
     document.getElementById('lastName')?.addEventListener('input', setAgreement);
 
-    // Build PDF URL (same logic as admin category page)
-    function buildPdfUrlPublic(fullName, drawName, formKey) {
-      const safeName = String(fullName || '')
-        .replace(/[^A-Za-z0-9_-]+/g, '_')
-        .replace(/_{2,}/g, '_')
-        .replace(/^_+|_+$/g, '');
-      const safeDraw = String(drawName || formKey || '')
-        .replace(/[^A-Za-z0-9_-]+/g, '-')
-        .replace(/-{2,}/g, '-')
-        .replace(/^-+|-+$/g, '');
-      return `/asset/forms/pdfFiles/${safeName}_${safeDraw}.pdf`;
-    }
-
     // Validation helpers
     function formIsValid() {
       const first = document.getElementById('firstName').value.trim();
       const last = document.getElementById('lastName').value.trim();
-      const mobile = (document.getElementById('mobileNo')?.value || '').trim();
       const draw = document.getElementById('draw').value.trim();
       const agreed = document.getElementById('agree').checked;
       const tokenVals = Array.from(document.querySelectorAll('.token-input'))
@@ -435,8 +377,7 @@
       const ab = document.getElementById('aadBack');
       const hasFront = af && af.files && af.files.length > 0;
       const hasBack = ab && ab.files && ab.files.length > 0;
-      const isValidMobile = /^\d{10}$/.test(mobile);
-      return first && last && isValidMobile && draw && tokenVals.length > 0 && agreed && photo && hasFront && hasBack;
+      return first && last && draw && tokenVals.length > 0 && agreed && photo && hasFront && hasBack;
     }
 
     function updateSubmitState() {
@@ -449,77 +390,16 @@
     // Watch inputs and fields
     document.getElementById('firstName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
     document.getElementById('lastName').addEventListener('input', () => { setAgreement(); updateSubmitState(); });
-    document.getElementById('mobileNo').addEventListener('input', updateSubmitState);
     document.getElementById('draw').addEventListener('input', updateSubmitState);
     document.getElementById('agree').addEventListener('change', updateSubmitState);
     document.getElementById('aadFront').addEventListener('change', updateSubmitState);
     document.getElementById('aadBack').addEventListener('change', updateSubmitState);
 
-    // ---- Read token from URL, fetch form config, and populate UI ----
-    async function initFromToken() {
-      const qs = new URLSearchParams(location.search);
-      const token = (qs.get('token') || '').trim();
-      if (!token) return; // no token provided
-      const id = decodeIdFromToken(token);
-      currentFormId = id || null;
-      if (!id) { console.warn('Invalid token'); return; }
-      try {
-        const res = await fetch(`/admin/super/api/forms_get.php?id=${encodeURIComponent(id)}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data || !data.ok || !data.form) { console.warn('Config fetch failed'); return; }
-        const form = data.form;
-        // Populate draw options from draw_names
-        const sel = document.getElementById('draw');
-        if (sel) {
-          // Keep placeholder, then add options
-          const existingFirst = sel.querySelector('option');
-          sel.innerHTML = '';
-          const placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = 'Select a draw';
-          sel.appendChild(placeholder);
-          if (Array.isArray(form.draw_names)) {
-            form.draw_names.forEach(n => {
-              const v = String(n || '').trim();
-              if (!v) return;
-              const opt = document.createElement('option');
-              opt.value = v; opt.textContent = v;
-              sel.appendChild(opt);
-            });
-          }
-        }
-        // Update header subtitle and page title from form_name and show Form ID badge
-        if (form.form_name) {
-          const subtitleEl = document.querySelector('.form-header .content h2');
-          const nameText = String(form.form_name);
-          const idBadge = formatFormId(currentFormId);
-          if (subtitleEl) subtitleEl.textContent = idBadge ? `${nameText} (${idBadge})` : nameText;
-          document.title = nameText + ' - Shree Datta Capital';
-        }
-
-        // Store languages for agreement
-        if (form.languages && typeof form.languages === 'object') {
-          // Default agreement points for all languages
-          const defaultAgreementPoints = {
-            english: '\n I,__NAME__, have read all the above terms and conditions and I agree to them.',
-            hindi: '\n मैं,__NAME__, उपरोक्त सभी नियम और शर्तें पढ़कर उनसे सहमत हूं।',
-            marathi: '\n मी,__NAME__, सर्व अटी व शर्ती मी वाचल्या आहेत व त्या मला मान्य आहेत.'
-          };
-          
-          remoteLanguages = {
-            english: String(form.languages.english || '') + (form.languages.english ? '\n' : '') + defaultAgreementPoints.english,
-            hindi: String(form.languages.hindi || '') + (form.languages.hindi ? '\n' : '') + defaultAgreementPoints.hindi,
-            marathi: String(form.languages.marathi || '') + (form.languages.marathi ? '\n' : '') + defaultAgreementPoints.marathi,
-          };
-          setAgreement();
-        }
-      } catch (e) {
-        console.warn('Error loading form config', e);
-      }
-    }
-
-    // Kick off token-based init after DOM is ready section loaded
-    initFromToken();
+    // If opened via /link.php, we receive ?t=<token>. Show the encrypted URL box.
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token') || urlParams.get('t') || '';
+    
+    console.log('URL Token:', urlToken);
 
     // Success modal helpers
     function showSuccess(info) {
@@ -528,34 +408,29 @@
       const metaEl = document.getElementById('successMeta');
       const closeBtn = document.getElementById('successClose');
       const dlBtn = document.getElementById('downloadPdfBtn');
-      const { userID, formID, name, category, when, pdfUrl } = (typeof info === 'string') ? { userID: '', formID: '', name: '', category: 'gold', when: '', pdfUrl: '' } : info || {};
+      const { userID, name, category, when, pdfUrl } = (typeof info === 'string') ? { userID: '', name: '', category: 'gold', when: '', pdfUrl: '' } : info || {};
       // Do not show User ID in the modal
       msgEl.textContent = 'Your response has been recorded.';
-      // Format Form ID as SDC-000xx when present
-      const formIdFormatted = formID ? `SDC-${String(formID).padStart(5, '0')}` : '';
-      metaEl.textContent = [
-        formIdFormatted ? `Form ID: ${formIdFormatted}` : '',
-        name ? `Name: ${name}` : '',
-        category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '',
-        when ? `Time: ${when}` : ''
-      ].filter(Boolean).join(' · ');
-      // Configure Download button (prefer dynamic endpoint)
+      metaEl.textContent = [name ? `Name: ${name}` : '', category ? `Form: ${category.charAt(0).toUpperCase()+category.slice(1)}` : '', when ? `Time: ${when}` : ''].filter(Boolean).join(' · ');
+      
+      // Configure Download button - always show and make functional
       if (dlBtn) {
-        let href = '';
-        if (userID) {
-          // Use dynamic renderer under form/api relative to this page
-          href = `api/download_pdf.php?user_id=${encodeURIComponent(userID)}`;
-        } else if (pdfUrl) {
-          href = pdfUrl;
-        }
-        if (href) {
-          dlBtn.href = href;
-          dlBtn.classList.remove('hidden');
-        } else {
-          dlBtn.href = '#';
-          dlBtn.classList.add('hidden');
-        }
+        // Always show the download button
+        dlBtn.classList.remove('hidden');
+        dlBtn.href = '#';
+        dlBtn.onclick = (e) => {
+          e.preventDefault();
+          // Download the template PDF
+          const downloadUrl = `api/download_template.php?user_id=${userID || 1}`;
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `submission_${userID || 'template'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
       }
+      
       modal.classList.remove('hidden');
       closeBtn.focus();
       function hide() {
@@ -670,7 +545,6 @@
       e.preventDefault();
       const first = document.getElementById('firstName').value.trim();
       const last = document.getElementById('lastName').value.trim();
-      const mobile = document.getElementById('mobileNo').value.trim();
       const draw = document.getElementById('draw').value.trim();
       const lang = document.getElementById('lang').value;
       const agreed = document.getElementById('agree').checked;
@@ -679,15 +553,14 @@
       const fBack = document.getElementById('aadBack').files;
       const tokenVals = Array.from(document.querySelectorAll('.token-input'))
         .map(i => i.value.trim()).filter(Boolean);
-      if (!first || !last || !/^\d{10}$/.test(mobile) || !draw || !agreed || !photoVal || !fFront?.length || !fBack?.length || tokenVals.length === 0) {
-        alert('Please complete all required fields including a valid 10-digit mobile number, tokens, photo and Aadhaar.');
+      if (!first || !last || !draw || !agreed || !photoVal || !fFront?.length || !fBack?.length || tokenVals.length === 0) {
+        alert('Please complete all required fields including tokens, photo and Aadhaar.');
         return;
       }
 
       const fd = new FormData();
       fd.append('firstName', first);
       fd.append('lastName', last);
-      fd.append('mobileNo', mobile);
       fd.append('draw', draw);
       fd.append('drawCategory', 'gold');
       fd.append('lang', lang);
@@ -696,15 +569,19 @@
       fd.append('aadFront', fFront[0]);
       fd.append('aadBack', fBack[0]);
       tokenVals.forEach(t => fd.append('tokens[]', t));
+      
+      // Add URL token if available
+      if (urlToken) {
+        fd.append('token', urlToken);
+      }
 
       const btn = document.getElementById('submitBtn');
       const prevText = btn.textContent;
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const qsForSubmit = new URLSearchParams(location.search);
-        const submitToken = (qsForSubmit.get('token') || '').trim();
-        if (submitToken) fd.append('token', submitToken);
-        const res = await fetch('api/register.php?debug=1&v=' + Date.now() + (submitToken ? ('&token=' + encodeURIComponent(submitToken)) : ''), { method: 'POST', body: fd });
+        // Include token in the API URL
+        const apiUrl = urlToken ? `api/register.php?debug=1&token=${urlToken}&v=${Date.now()}` : `api/register.php?debug=1&v=${Date.now()}`;
+        const res = await fetch(apiUrl, { method: 'POST', body: fd });
         const responseText = await res.text();
         console.log('Response status:', res.status, 'Response text:', responseText);
         let data = {};
@@ -715,13 +592,10 @@
           throw new Error('Invalid server response: ' + responseText.substring(0, 100));
         }
         if (!res.ok || !data.ok) {
-          const msg = (data && data.error) ? data.error : 'Server error';
-          const det = (data && data.detail) ? ('\nDetails: ' + data.detail) : '';
-          throw new Error(msg + det);
+          throw new Error(data && data.error ? data.error : 'Server error');
         }
         const when = new Date().toLocaleString(undefined, { year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:true });
-        const computedPdfUrl = buildPdfUrlPublic(`${first} ${last}`.trim(), draw, 'gold');
-        showSuccess({ userID: data.userID, formID: data.formID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl || computedPdfUrl });
+        showSuccess({ userID: data.userID, name: `${first} ${last}`.trim(), category: 'gold', when, pdfUrl: data.pdfUrl });
         e.target.reset();
         setAgreement();
         photoPreview.src = '';
