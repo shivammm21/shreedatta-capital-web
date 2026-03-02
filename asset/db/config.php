@@ -18,6 +18,9 @@ $options = [
 
 try {
     $pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
+    // Set Timezone to Asia/Kolkata (IST) for both PHP and MySQL
+    date_default_timezone_set('Asia/Kolkata');
+    $pdo->exec("SET time_zone = '+05:30'");
 } catch (Throwable $e) {
     http_response_code(500);
     echo 'Database connection failed: ' . htmlspecialchars($e->getMessage());
